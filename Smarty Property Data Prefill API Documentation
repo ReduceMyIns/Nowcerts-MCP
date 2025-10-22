@@ -1,0 +1,219 @@
+Smarty Property Data Prefill API Documentation
+
+
+## API Endpoint: Property Lookup
+
+This endpoint allows users to retrieve detailed property information based on the provided address parameters. It performs a search for property details using the specified street, city, state, and zipcode.
+
+### Request Method
+
+- **GET**
+    
+
+### Endpoint
+
+- `https://us-enrichment.api.smarty.com/lookup/search/property/principal`
+    
+
+### Query Parameters
+
+- **auth-id** (string): The authentication ID required for accessing the API.
+    
+- **auth-token** (string): The authentication token for validating the request.
+    
+- **street** (string): The street address of the property to be looked up (e.g., `2110 Audubon Ln`).
+    
+- **city** (string): The city where the property is located (e.g., `Murfreesboro`).
+    
+- **state** (string): The state abbreviation (e.g., `TN`).
+    
+- **zipcode** (string): The postal code of the property's location (e.g., `37128`).
+    
+- **license** (string): The license key for accessing property data.
+    
+
+### Expected Response Format
+
+- **Status Code**: `200 OK`
+    
+- **Content-Type**: `application/json`
+    
+- **Response Body**: A JSON array containing property information, including:
+    
+    - `smarty_key`: A unique identifier for the request.
+        
+    - `data_set_name`: The name of the data set used.
+        
+    - `data_subset_name`: The name of the data subset.
+        
+    - `matched_address`: An object containing the matched address details (street, city, state, zipcode).
+        
+    - `attributes`: An object with various property attributes, such as:
+        
+        - `assessed_value`, `market_value_year`, `year_built`, etc.
+            
+
+This endpoint provides comprehensive property data, which can be utilized for various applications, including real estate analysis and property assessments.
+
+curl -L 'https://us-enrichment.api.smarty.com/lookup/search/property/principal?auth-id=e6187c37-3604-48eb-af85-ba6f07542ce0&auth-token=x7lUVTxL7Jwye6XJ7A83&street=2110%20Audubon%20Ln&city=Murfreesboro&state=TN&zipcode=37128&license=us-property-data-principal-cloud'
+
+Response: [
+    {
+        "smarty_key": "720922272",
+        "data_set_name": "property",
+        "data_subset_name": "principal",
+        "matched_address": {
+            "street": "2110 Audubon Ln",
+            "city": "Murfreesboro",
+            "state": "TN",
+            "zipcode": "37128-6084"
+        },
+        "attributes": {
+            "1st_floor_sqft": "849",
+            "assessed_improvement_percent": "85.00",
+            "assessed_improvement_value": "81275",
+            "assessed_land_value": "13750",
+            "assessed_value": "95025",
+            "assessor_last_update": "2025-06-06",
+            "assessor_taxroll_update": "2025-05-20",
+            "building_definition_code": "living_area",
+            "building_sqft": "2181",
+            "cbsa_code": "34980",
+            "cbsa_name": "Nashville-Davidson--Murfreesboro--Franklin, TN Metropolitan Statistical Area",
+            "census_block": "1019",
+            "census_block_group": "1",
+            "census_fips_place_code": "51560",
+            "census_tract": "40911",
+            "combined_statistical_area": "Nashville-Davidson--Murfreesboro, T",
+            "company_flag": "owner_is_not_a_company",
+            "construction_type": "frame",
+            "contact_city": "Murfreesboro",
+            "contact_crrt": "R047",
+            "contact_full_address": "2110 Audubon Ln",
+            "contact_house_number": "2110",
+            "contact_mail_info_format": "standard_us",
+            "contact_mailing_county": "Rutherford",
+            "contact_mailing_fips": "47149",
+            "contact_state": "TN",
+            "contact_street_name": "Audubon",
+            "contact_suffix": "Ln",
+            "contact_zip": "37128",
+            "contact_zip4": "6084",
+            "deed_document_book": "1383",
+            "deed_document_number": "0013831660",
+            "deed_document_page": "1660",
+            "deed_owner_first_name": "Chase",
+            "deed_owner_first_name2": "Krystle",
+            "deed_owner_full_name": "Chase W Henderson",
+            "deed_owner_full_name2": "Krystle R Henderson",
+            "deed_owner_last_name": "Henderson",
+            "deed_owner_last_name2": "Henderson",
+            "deed_owner_middle_name": "W",
+            "deed_owner_middle_name2": "R",
+            "deed_sale_date": "2015-06-16",
+            "deed_sale_price": "222300",
+            "deed_transaction_id": "549874143",
+            "depth_linear_footage": "231.2",
+            "document_type_description": "deed_of_trust",
+            "elevation_feet": "617",
+            "exterior_walls": "brick_stone",
+            "fips_code": "47149",
+            "fireplace_number": "0",
+            "first_name": "Chase",
+            "first_name_2": "Krystle",
+            "foundation": "block_unspecified",
+            "garage": "garage_attached",
+            "garage_sqft": "483",
+            "gross_sqft": "2664",
+            "heat": "heat_pump",
+            "instrument_date": "2020-10-16",
+            "interior_structure": "wallboard_drywall",
+            "land_use_code": "1000",
+            "land_use_group": "residential",
+            "land_use_standard": "single_family_residence",
+            "last_name": "Henderson",
+            "last_name_2": "Henderson",
+            "latitude": "35.802181",
+            "legal_description": "Lot 58 Barfield Downs Sec 1 PB 36 Pg 64 Renamed For 12 Split Off 114-12.09 For 11 96.34 X 231.17 IRR",
+            "lender_city": "Nashville",
+            "lender_first_name": "Legacy Home Mortgage Inc",
+            "lender_last_name": "Legacy Home Mortgage Inc",
+            "lender_name": "Legacy Home Mortgage Inc Legacy Home Mortgage Inc",
+            "lender_seller_carry_back": "non_seller_carryback_loan",
+            "lender_state": "TN",
+            "lender_zip": "37215",
+            "longitude": "-86.434654",
+            "lot_1": "58",
+            "lot_sqft": "16824.00",
+            "market_improvement_percent": "85.00",
+            "market_improvement_value": "325100",
+            "market_land_value": "55000",
+            "market_value_year": "2022",
+            "match_type": "parcel",
+            "middle_name": "W",
+            "middle_name_2": "R",
+            "minor_civil_division_code": "91290",
+            "minor_civil_division_name": "7",
+            "mortgage_amount": "161000",
+            "mortgage_due_date": "2050-10-21",
+            "mortgage_lender_code": "28678",
+            "mortgage_recording_date": "2020-10-22",
+            "mortgage_term": "360",
+            "mortgage_term_type": "month",
+            "mortgage_type": "conventional",
+            "msa_code": "34980",
+            "msa_name": "Nashville-Davidson--Murfreesboro--Franklin, TN",
+            "name_title_company": "Not Available",
+            "neighborhood_code": "L55000",
+            "owner_full_name": "Chase W Henderson",
+            "owner_full_name_2": "Krystle R Henderson",
+            "owner_occupancy_status": "owner_occupied",
+            "ownership_transfer_date": "2015-06-16",
+            "ownership_transfer_doc_number": "Rb13831660",
+            "ownership_transfer_transaction_id": "549874143",
+            "ownership_type": "individual",
+            "ownership_type_2": "individual",
+            "parcel_account_number": "R0105405",
+            "parcel_number_alternate": "114m a 00100",
+            "parcel_number_year_added": "2011",
+            "parcel_number_year_change": "2011",
+            "parcel_raw_number": "114M-A-001.00-000",
+            "parking_spaces": "0",
+            "plumbing_fixtures_count": "10",
+            "porch": "open_porch",
+            "previous_assessed_value": "95025",
+            "prior_sale_date": "2015-01-06",
+            "property_address_carrier_route_code": "R047",
+            "property_address_city": "Murfreesboro",
+            "property_address_full": "2110 Audubon Ln",
+            "property_address_house_number": "2110",
+            "property_address_state": "TN",
+            "property_address_street_name": "Audubon",
+            "property_address_street_suffix": "Ln",
+            "property_address_zip_4": "6084",
+            "property_address_zipcode": "37128",
+            "publication_date": "2023-08-05",
+            "roof_cover": "gravel",
+            "roof_frame": "gable_hip",
+            "sale_amount": "222300",
+            "sale_date": "2015-06-16",
+            "situs_county": "Rutherford",
+            "situs_state": "TN",
+            "subdivision": "Barfield Downs Sec 1",
+            "tax_assess_year": "2025",
+            "tax_billed_amount": "2688.00",
+            "tax_fiscal_year": "2024",
+            "tax_jurisdiction": "Rutherford",
+            "total_market_value": "380100",
+            "trust_description": "not_a_trust",
+            "upper_floors_sqft": "483",
+            "width_linear_footage": "96.3",
+            "year_built": "2015"
+        }
+    }
+]
+
+All Field Names (only keys with values will be sent in the response)
+
+GitHub Repo: https://github.com/smartystreets/smartystreets-go-sdk/tree/master/us-enrichment-api
+
