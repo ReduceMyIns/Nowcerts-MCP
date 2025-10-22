@@ -119,13 +119,21 @@ const tools: Tool[] = [
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
-    description: "Retrieve a list of agents with OData-style pagination. Must provide either $filter OR all three of ($top, $skip, $orderby).",
+    description: `Retrieve agents from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+
+Common $filter examples:
+- Search by name: "contains(AgentName, 'Smith')"
+- Search by email: "contains(Email, 'agent@example.com')"
+- Active agents only: "Active eq true"
+- Multiple conditions: "Active eq true and contains(AgentName, 'John')"
+
+Available fields: AgentId, AgentName, Email, Phone, Active, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression (e.g., 'AgentName eq John'). Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
         },
         $top: {
           type: "number",
@@ -150,7 +158,19 @@ const tools: Tool[] = [
   // ========== INSURED ENDPOINTS ==========
   {
     name: "nowcerts_insured_getList",
-    description: "Retrieve a paginated list of insureds using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
+    description: `Retrieve insureds from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+
+Common $filter examples:
+- Search by name: "contains(InsuredFirstName, 'John') or contains(InsuredLastName, 'Smith')"
+- Search by email: "contains(InsuredEmail, 'john@example.com')"
+- Search by phone (IMPORTANT - format as ###-###-####): "contains(InsuredPhoneNumber, '615-568-2793') or contains(InsuredCellPhone, '615-568-2793')"
+- Search by city/state: "InsuredCity eq 'Nashville' and InsuredState eq 'TN'"
+- Commercial insureds: "InsuredType eq 'Commercial'"
+- Multiple conditions: "(contains(InsuredPhoneNumber, '615-568-2793') or contains(InsuredEmail, 'john@example.com'))"
+
+PHONE FORMAT: Always use ###-###-#### format for phone searches (e.g., '615-568-2793', NOT '6155682793')
+
+Available fields: InsuredId, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -168,7 +188,7 @@ const tools: Tool[] = [
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'InsuredName asc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by (e.g., 'InsuredLastName asc'). Required with $top and $skip if not using $filter.",
         },
         $select: {
           type: "string",
@@ -254,7 +274,24 @@ const tools: Tool[] = [
   // ========== POLICY ENDPOINTS ==========
   {
     name: "nowcerts_policy_getList",
-    description: "Get paginated list of policies using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
+    description: `Get policies from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+
+Common $filter examples:
+- Search by insured phone (format as ###-###-####): "(contains(insuredPhoneNumber, '615-568-2793') or contains(insuredCellPhone, '615-568-2793') or contains(insuredSMSPhone, '615-568-2793'))"
+- Search by insured email: "contains(insuredEmail, 'john@example.com')"
+- Search by policy number: "contains(number, 'MT949221291')"
+- Active policies only: "active eq true"
+- Policies by status: "status eq 'Active'" or "status eq 'Expired'" or "status eq 'Renewed'"
+- Quotes only: "isQuote eq true"
+- By carrier: "contains(carrierName, 'PROGRESSIVE')"
+- By date range: "effectiveDate ge 2024-01-01T00:00:00Z and effectiveDate le 2024-12-31T00:00:00Z"
+- Expiring soon: "expirationDate le 2025-12-31T00:00:00Z and active eq true"
+- By insured type: "insuredType eq 'Personal'" or "insuredType eq 'Commercial'"
+- Complex search: "(contains(insuredPhoneNumber, '615-568-2793') or contains(insuredEmail, 'john@example.com')) and active eq true"
+
+PHONE FORMAT: Always use ###-###-#### format (e.g., '615-568-2793', NOT '6155682793')
+
+Available fields: databaseId, number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, insuredCellPhone, insuredSMSPhone, carrierName, totalPremium, active, status, insuredType, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -272,7 +309,7 @@ const tools: Tool[] = [
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'EffectiveDate desc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by (e.g., 'effectiveDate desc' or 'expirationDate asc'). Required with $top and $skip if not using $filter.",
         },
         $select: {
           type: "string",
@@ -446,7 +483,18 @@ const tools: Tool[] = [
   // ========== CLAIM ENDPOINTS ==========
   {
     name: "nowcerts_claim_getList",
-    description: "Get paginated list of claims using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
+    description: `Get claims from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+
+Common $filter examples:
+- Search by claim number: "contains(ClaimNumber, '12345')"
+- Search by policy number: "contains(PolicyNumber, 'MT949221291')"
+- By status: "ClaimStatus eq 'Open'" or "ClaimStatus eq 'Closed'"
+- By date range: "ClaimDate ge 2024-01-01T00:00:00Z and ClaimDate le 2024-12-31T00:00:00Z"
+- By insured name: "contains(InsuredName, 'Henderson')"
+- Recent claims: "ClaimDate ge 2024-01-01T00:00:00Z"
+- Open claims only: "ClaimStatus eq 'Open'"
+
+Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, InsuredName, ClaimAmount, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -926,7 +974,16 @@ const tools: Tool[] = [
   // ========== PRINCIPAL ENDPOINTS ==========
   {
     name: "nowcerts_principal_getList",
-    description: "Get paginated list of principals using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
+    description: `Get principals (additional insureds/interested parties) from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+
+Common $filter examples:
+- Search by name: "contains(PrincipalName, 'Smith')"
+- Search by email: "contains(Email, 'principal@example.com')"
+- By type: "PrincipalType eq 'Additional Insured'" or "PrincipalType eq 'Loss Payee'"
+- Active principals: "Active eq true"
+- By policy: "PolicyId eq 'guid-here'"
+
+Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, PolicyId, Active, etc.`,
     inputSchema: {
       type: "object",
       properties: {
