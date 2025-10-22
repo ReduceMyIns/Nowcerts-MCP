@@ -47,7 +47,7 @@ class NowCertsClient {
 
       const response = await this.axiosInstance.post("/token", params.toString(), {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'text/plain',
         },
       });
 
@@ -74,7 +74,7 @@ class NowCertsClient {
 
       const response = await this.axiosInstance.post("/token", params.toString(), {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'text/plain',
         },
       });
 
