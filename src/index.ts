@@ -196,38 +196,48 @@ Full documentation: https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdz
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
-    description: `Retrieve agents from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+    description: `Retrieve agents from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first). The 'changeDate' field exists on all entities.
 
 Common $filter examples:
+- Active agents only: "active eq true"
 - Search by first name: "contains(firstName, 'John')"
 - Search by last name: "contains(lastName, 'Smith')"
 - Search by email: "contains(email, 'agent@example.com')"
-- Active agents only: "active eq true"
 - Multiple conditions: "active eq true and contains(lastName, 'Smith')"
 
-Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active, primaryRole, npnNumber, isDefaultAgent, userId, userDisplayName, etc.`,
+Pagination examples:
+- First 100 active agents: $filter=active eq true&$top=100&$skip=0&$orderby=firstName asc
+- Next 100: $filter=active eq true&$top=100&$skip=100&$orderby=firstName asc
+
+Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active, primaryRole, npnNumber, isDefaultAgent, userId, userDisplayName, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression (optional). Example: 'active eq true'",
         },
         $top: {
           type: "number",
-          description: "Number of records to return (limit). Required with $skip and $orderby if not using $filter.",
+          description: "Number of records to return (limit). Example: 100",
         },
         $skip: {
           type: "number",
-          description: "Number of records to skip (offset). Required with $top and $orderby if not using $filter.",
+          description: "Number of records to skip (offset). Example: 0 for first page, 100 for second page",
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'lastName asc' or 'changeDate desc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by. Default: 'changeDate desc'. Examples: 'firstName asc', 'lastName desc', 'changeDate desc'",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return (e.g., 'id,firstName,lastName,email,active')",
+          description: "Comma-separated list of columns to return (optional). Example: 'id,firstName,lastName,email,active'",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -236,9 +246,11 @@ Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active,
   // ========== INSURED ENDPOINTS ==========
   {
     name: "nowcerts_insured_getList",
-    description: `Retrieve insureds from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+    description: `Retrieve insureds from NowCerts using OData query parameters.
 
-IMPORTANT - ID FIELD NAMING:
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+ID FIELD NAMING:
 - On Insured object itself: Use "ID" (the primary UUID)
 - On related objects (policies, etc.): Use "insuredDatabaseId" to link to insureds
 - In Zapier endpoints: Use "insured_database_id"
@@ -248,36 +260,43 @@ Common $filter examples:
 - Search by ID: "ID eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
 - Search by name: "contains(InsuredFirstName, 'John') or contains(InsuredLastName, 'Smith')"
 - Search by email: "contains(InsuredEmail, 'test@example.com')"
-- Search by phone (IMPORTANT - format as ###-###-####): "contains(InsuredPhoneNumber, '555-123-4567') or contains(InsuredCellPhone, '555-123-4567')"
+- Search by phone (format as ###-###-####): "contains(InsuredPhoneNumber, '555-123-4567')"
 - Search by city/state: "InsuredCity eq 'Nashville' and InsuredState eq 'TN'"
 - Commercial insureds: "InsuredType eq 'Commercial'"
-- Multiple conditions: "(contains(InsuredPhoneNumber, '555-123-4567') or contains(InsuredEmail, 'test@example.com'))"
 
-PHONE FORMAT: Always use ###-###-#### format for phone searches (e.g., '555-123-4567', NOT '5551234567')
+Pagination examples:
+- First 100 with filter: $filter=InsuredType eq 'Personal'&$top=100&$skip=0&$orderby=InsuredLastName asc
+- Combine all params: $filter=contains(InsuredEmail, 'gmail')&$top=50&$skip=0&$orderby=changeDate desc&$count=true
 
-Available fields: ID (UUID), InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, etc.`,
+PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
+
+Available fields: ID, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
         $top: {
           type: "number",
-          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+          description: "Number of records to return (limit). Example: 100",
         },
         $skip: {
           type: "number",
-          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+          description: "Number of records to skip (offset). Example: 0",
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'InsuredLastName asc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'InsuredLastName asc'",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -359,9 +378,11 @@ Available fields: ID (UUID), InsuredFirstName, InsuredLastName, InsuredEmail, In
   // ========== POLICY ENDPOINTS ==========
   {
     name: "nowcerts_policy_getList",
-    description: `Get policies from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+    description: `Get policies from NowCerts using OData query parameters.
 
-IMPORTANT - ID FIELD NAMING:
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+ID FIELD NAMING:
 - Policy's own ID: "databaseId" (the policy's UUID)
 - Link to insured: "insuredDatabaseId" (UUID linking to the insured/prospect)
 - When linking other objects (vehicles, drivers) to this policy: Use "policyDatabaseId"
@@ -384,29 +405,37 @@ Common $filter examples:
 
 PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
 
-Available fields: databaseId (policy UUID), insuredDatabaseId (insured UUID), number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, insuredCellPhone, insuredSMSPhone, carrierName, totalPremium, active, status, insuredType, etc.`,
+Pagination examples:
+- Active policies only: $filter=active eq true&$top=100&$skip=0&$orderby=effectiveDate desc
+- Combine filter + pagination: $filter=status eq 'Active'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: databaseId, insuredDatabaseId, number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, carrierName, totalPremium, active, status, insuredType, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
         $top: {
           type: "number",
-          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+          description: "Number of records to return (limit). Example: 100",
         },
         $skip: {
           type: "number",
-          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+          description: "Number of records to skip (offset). Example: 0",
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'effectiveDate desc' or 'expirationDate asc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by. Default: 'changeDate desc'. Examples: 'effectiveDate desc', 'expirationDate asc'",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -576,7 +605,9 @@ Available fields: databaseId (policy UUID), insuredDatabaseId (insured UUID), nu
   // ========== CLAIM ENDPOINTS ==========
   {
     name: "nowcerts_claim_getList",
-    description: `Get claims from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+    description: `Get claims from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
 Common $filter examples:
 - Search by claim number: "contains(ClaimNumber, '12345')"
@@ -587,29 +618,37 @@ Common $filter examples:
 - Recent claims: "ClaimDate ge 2024-01-01T00:00:00Z"
 - Open claims only: "ClaimStatus eq 'Open'"
 
-Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, InsuredName, ClaimAmount, etc.`,
+Pagination examples:
+- Open claims: $filter=ClaimStatus eq 'Open'&$top=100&$skip=0&$orderby=ClaimDate desc
+- Combine params: $filter=ClaimStatus eq 'Open'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, InsuredName, ClaimAmount, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
         $top: {
           type: "number",
-          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+          description: "Number of records to return (limit). Example: 100",
         },
         $skip: {
           type: "number",
-          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+          description: "Number of records to skip (offset). Example: 0",
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'ClaimDate desc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'ClaimDate desc'",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -1099,7 +1138,9 @@ ID FIELD NAMING:
   // ========== PRINCIPAL ENDPOINTS ==========
   {
     name: "nowcerts_principal_getList",
-    description: `Get principals (additional insureds/interested parties) from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
+    description: `Get principals (additional insureds/interested parties) from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
 Common $filter examples:
 - Search by name: "contains(PrincipalName, 'Smith')"
@@ -1108,29 +1149,37 @@ Common $filter examples:
 - Active principals: "Active eq true"
 - By policy: "PolicyId eq 'guid-here'"
 
-Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, PolicyId, Active, etc.`,
+Pagination examples:
+- Active principals: $filter=Active eq true&$top=100&$skip=0&$orderby=PrincipalName asc
+- Combine params: $filter=Active eq true&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, PolicyId, Active, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
         $filter: {
           type: "string",
-          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
         $top: {
           type: "number",
-          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+          description: "Number of records to return (limit). Example: 100",
         },
         $skip: {
           type: "number",
-          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+          description: "Number of records to skip (offset). Example: 0",
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'PrincipalName asc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'PrincipalName asc'",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -2006,6 +2055,12 @@ Additional API documentation:
   const endpoint = endpointMap[toolName];
   if (!endpoint) {
     throw new Error(`Unknown tool: ${toolName}`);
+  }
+
+  // Add default $orderby=changeDate desc for List endpoints if not specified
+  const isListEndpoint = endpoint.path.includes('List') && endpoint.method === 'GET';
+  if (isListEndpoint && !args.$orderby) {
+    args.$orderby = 'changeDate desc';
   }
 
   try {
