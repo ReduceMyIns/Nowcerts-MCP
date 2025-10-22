@@ -1474,6 +1474,195 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       required: ["data"],
     },
   },
+
+  // ========== EXTERNAL API INTEGRATIONS ==========
+  {
+    name: "fenris_prefillHousehold",
+    description: `Prefill household data using the Fenris Auto Insurance Prefill API.
+
+This API provides comprehensive household information including:
+- Household members (names, ages, relationships)
+- Vehicles owned (VIN, year, make, model)
+- Property details (year built, square footage, construction type)
+- Prior insurance information
+
+Use this BEFORE creating insureds/policies to save data entry time and improve accuracy.
+
+Common use cases:
+- New quote - auto-populate customer data
+- Annual review - verify household composition
+- Renewal - check for household changes
+
+Returns structured data that can be directly used with NowCerts insert endpoints.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        firstName: {
+          type: "string",
+          description: "Primary insured first name (required)",
+        },
+        lastName: {
+          type: "string",
+          description: "Primary insured last name (required)",
+        },
+        address: {
+          type: "string",
+          description: "Street address (required)",
+        },
+        city: {
+          type: "string",
+          description: "City (required)",
+        },
+        state: {
+          type: "string",
+          description: "State abbreviation (e.g., 'TN') (required)",
+        },
+        zip: {
+          type: "string",
+          description: "5-digit ZIP code (required)",
+        },
+        dateOfBirth: {
+          type: "string",
+          description: "Date of birth in YYYY-MM-DD format (optional)",
+        },
+      },
+      required: ["firstName", "lastName", "address", "city", "state", "zip"],
+    },
+  },
+  {
+    name: "smarty_verifyAddress",
+    description: `Verify and standardize addresses using the Smarty Address Verification API.
+
+This API validates addresses against USPS data and returns:
+- Standardized address format (proper casing, abbreviations)
+- Address components (street, city, state, ZIP+4)
+- Delivery point validation
+- County information
+- Congressional district
+- Latitude/Longitude coordinates
+- Property metadata
+
+Use this to:
+- Validate addresses before creating insured records
+- Standardize addresses for consistency
+- Ensure accurate mailing addresses
+- Get geocoding data for properties
+
+IMPORTANT: Always use the standardized address returned by this API in your NowCerts records.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        street: {
+          type: "string",
+          description: "Street address line (required)",
+        },
+        street2: {
+          type: "string",
+          description: "Apartment, suite, unit number (optional)",
+        },
+        city: {
+          type: "string",
+          description: "City name (optional if providing ZIP)",
+        },
+        state: {
+          type: "string",
+          description: "State abbreviation (e.g., 'TN') (optional if providing ZIP)",
+        },
+        zipcode: {
+          type: "string",
+          description: "5 or 9-digit ZIP code (optional if providing city/state)",
+        },
+      },
+      required: ["street"],
+    },
+  },
+  {
+    name: "nhtsa_decodeVin",
+    description: `Decode VIN using the NHTSA Vehicle API to get comprehensive vehicle information.
+
+This API returns detailed vehicle specifications including:
+- Year, Make, Model, Trim
+- Body Type (Sedan, SUV, Truck, etc.)
+- Engine specifications (type, displacement, cylinders)
+- Transmission type
+- Drive type (FWD, RWD, AWD, 4WD)
+- Manufacturer details
+- Plant information
+- Safety ratings
+- GVWR (Gross Vehicle Weight Rating)
+- Vehicle type classification
+
+Use this to:
+- Auto-populate vehicle fields when customer provides VIN
+- Verify vehicle information for accuracy
+- Get standard vehicle specifications
+- Determine proper insurance classification
+
+IMPORTANT: VIN must be exactly 17 characters.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        vin: {
+          type: "string",
+          description: "17-character Vehicle Identification Number (required)",
+        },
+        modelYear: {
+          type: "number",
+          description: "Model year (optional, helps with accuracy)",
+        },
+      },
+      required: ["vin"],
+    },
+  },
+  {
+    name: "nhtsa_checkRecalls",
+    description: `Check for open safety recalls on a vehicle using the NHTSA Recalls API.
+
+This API searches the NHTSA database for any open safety recalls on the specified vehicle.
+
+Returns for each recall:
+- Recall campaign number
+- Recall date
+- Component description
+- Summary of the defect
+- Consequence of the defect
+- Corrective action/remedy
+- Manufacturer's recall number
+- Whether the recall is safety-related
+
+Use this to:
+- Inform customers of open recalls when quoting
+- Check recalls during annual review
+- Verify recalls during claim investigation
+- Due diligence before binding policies
+
+IMPORTANT:
+- Always inform customers of open recalls
+- Document in notes if recalls are found
+- Some states require disclosure of recall information`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        vin: {
+          type: "string",
+          description: "17-character Vehicle Identification Number (required)",
+        },
+        modelYear: {
+          type: "number",
+          description: "Model year (optional but recommended)",
+        },
+        make: {
+          type: "string",
+          description: "Vehicle make (optional, improves search)",
+        },
+        model: {
+          type: "string",
+          description: "Vehicle model (optional, improves search)",
+        },
+      },
+      required: ["vin"],
+    },
+  },
 ];
 
 // Endpoint mapping for tool execution
@@ -1747,6 +1936,204 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const toolName = request.params.name;
   const args = request.params.arguments || {};
+
+  // ========== EXTERNAL API HANDLERS ==========
+
+  // Fenris Prefill API Handler
+  if (toolName === "fenris_prefillHousehold") {
+    // Note: Requires FENRIS_API_KEY environment variable
+    const fenrisApiKey = process.env.FENRIS_API_KEY;
+    if (!fenrisApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: FENRIS_API_KEY environment variable not set. Please add your Fenris API key to use this feature.\n\nTo get an API key, visit: https://fenrisdata.com",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const response = await axios.post(
+        "https://api.fenrisdata.com/v1/prefill",
+        {
+          first_name: args.firstName,
+          last_name: args.lastName,
+          address: args.address,
+          city: args.city,
+          state: args.state,
+          zip: args.zip,
+          date_of_birth: args.dateOfBirth,
+        },
+        {
+          headers: {
+            "Authorization": `Bearer ${fenrisApiKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling Fenris API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // Smarty Address Verification Handler
+  if (toolName === "smarty_verifyAddress") {
+    const smartyAuthId = process.env.SMARTY_AUTH_ID;
+    const smartyAuthToken = process.env.SMARTY_AUTH_TOKEN;
+
+    if (!smartyAuthId || !smartyAuthToken) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN environment variables not set.\n\nTo get credentials, visit: https://www.smarty.com/pricing",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const response = await axios.get(
+        "https://us-street.api.smarty.com/street-address",
+        {
+          params: {
+            "auth-id": smartyAuthId,
+            "auth-token": smartyAuthToken,
+            street: args.street,
+            street2: args.street2,
+            city: args.city,
+            state: args.state,
+            zipcode: args.zipcode,
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling Smarty API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // NHTSA VIN Decoder Handler (Free, no API key needed)
+  if (toolName === "nhtsa_decodeVin") {
+    try {
+      const vin = (args as any).vin;
+      if (!vin || vin.length !== 17) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Error: VIN must be exactly 17 characters",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const modelYear = (args as any).modelYear ? `/${(args as any).modelYear}` : "";
+      const response = await axios.get(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}${modelYear}?format=json`
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling NHTSA VIN Decoder API: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // NHTSA Recalls Check Handler (Free, no API key needed)
+  if (toolName === "nhtsa_checkRecalls") {
+    try {
+      const vin = (args as any).vin;
+      if (!vin || vin.length !== 17) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Error: VIN must be exactly 17 characters",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const response = await axios.get(
+        `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${(args as any).make || ""}&model=${(args as any).model || ""}&modelYear=${(args as any).modelYear || ""}&vin=${vin}`
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling NHTSA Recalls API: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // ========== NOWCERTS API HANDLERS ==========
 
   // Special handler for lookup tables documentation
   if (toolName === "nowcerts_schema_getLookupTables") {
