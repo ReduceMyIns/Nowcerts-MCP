@@ -119,35 +119,29 @@ const tools: Tool[] = [
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
-    description: "Retrieve a list of agents with search, filtering, and pagination",
+    description: "Retrieve a list of agents with OData-style pagination. Must provide either $filter OR all three of ($top, $skip, $orderby).",
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria for filtering agents",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-          description: "Columns to return in the response",
-        },
-        order_by: {
+        $filter: {
           type: "string",
-          description: "Field to order results by",
+          description: "OData filter expression (e.g., 'AgentName eq John'). Use this OR the pagination trio ($top, $skip, $orderby).",
         },
-        order_by_direction: {
+        $top: {
+          type: "number",
+          description: "Number of records to return (limit). Required with $skip and $orderby if not using $filter.",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Required with $top and $orderby if not using $filter.",
+        },
+        $orderby: {
           type: "string",
-          enum: ["asc", "desc"],
-          description: "Order direction",
+          description: "Field to order by (e.g., 'AgentName asc' or 'AgentId desc'). Required with $top and $skip if not using $filter.",
         },
-        page: {
-          type: "number",
-          description: "Page number for pagination",
-        },
-        per_page: {
-          type: "number",
-          description: "Number of results per page",
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (e.g., 'AgentId,AgentName,Email')",
         },
       },
     },
@@ -156,29 +150,30 @@ const tools: Tool[] = [
   // ========== INSURED ENDPOINTS ==========
   {
     name: "nowcerts_insured_getList",
-    description: "Retrieve a paginated list of insureds using /api/InsuredList()",
+    description: "Retrieve a paginated list of insureds using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria for filtering insureds",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-          description: "Columns to return",
-        },
-        order_by: {
+        $filter: {
           type: "string",
-          description: "Field to order by",
+          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
         },
-        order_by_direction: {
+        $top: {
+          type: "number",
+          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+        },
+        $orderby: {
           type: "string",
-          enum: ["asc", "desc"],
+          description: "Field to order by (e.g., 'InsuredName asc'). Required with $top and $skip if not using $filter.",
         },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return",
+        },
       },
     },
   },
@@ -259,28 +254,30 @@ const tools: Tool[] = [
   // ========== POLICY ENDPOINTS ==========
   {
     name: "nowcerts_policy_getList",
-    description: "Get paginated list of policies using /api/PolicyList()",
+    description: "Get paginated list of policies using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria (is_quote, search_string, etc.)",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-        },
-        order_by: {
+        $filter: {
           type: "string",
-          description: "Field to order by (businessSubType, effectiveDate, expirationDate)",
+          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
         },
-        order_by_direction: {
+        $top: {
+          type: "number",
+          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+        },
+        $orderby: {
           type: "string",
-          enum: ["asc", "desc"],
+          description: "Field to order by (e.g., 'EffectiveDate desc'). Required with $top and $skip if not using $filter.",
         },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return",
+        },
       },
     },
   },
@@ -449,16 +446,30 @@ const tools: Tool[] = [
   // ========== CLAIM ENDPOINTS ==========
   {
     name: "nowcerts_claim_getList",
-    description: "Get paginated list of claims using /api/ClaimList()",
+    description: "Get paginated list of claims using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: { type: "object" },
-        columns: { type: "array", items: { type: "string" } },
-        order_by: { type: "string" },
-        order_by_direction: { type: "string", enum: ["asc", "desc"] },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+        },
+        $top: {
+          type: "number",
+          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+        },
+        $orderby: {
+          type: "string",
+          description: "Field to order by (e.g., 'ClaimDate desc'). Required with $top and $skip if not using $filter.",
+        },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return",
+        },
       },
     },
   },
@@ -915,16 +926,30 @@ const tools: Tool[] = [
   // ========== PRINCIPAL ENDPOINTS ==========
   {
     name: "nowcerts_principal_getList",
-    description: "Get paginated list of principals",
+    description: "Get paginated list of principals using OData. Must provide either $filter OR all three of ($top, $skip, $orderby).",
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: { type: "object" },
-        columns: { type: "array", items: { type: "string" } },
-        order_by: { type: "string" },
-        order_by_direction: { type: "string", enum: ["asc", "desc"] },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Use this OR the pagination trio ($top, $skip, $orderby).",
+        },
+        $top: {
+          type: "number",
+          description: "Number of records to return. Required with $skip and $orderby if not using $filter.",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip. Required with $top and $orderby if not using $filter.",
+        },
+        $orderby: {
+          type: "string",
+          description: "Field to order by (e.g., 'PrincipalName asc'). Required with $top and $skip if not using $filter.",
+        },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return",
+        },
       },
     },
   },
