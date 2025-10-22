@@ -39,11 +39,16 @@ class NowCertsClient {
 
   async authenticate(): Promise<void> {
     try {
-      const response = await this.axiosInstance.post("/token", {
-        grant_type: "password",
-        username: this.username,
-        password: this.password,
-        client_id: CLIENT_ID,
+      const params = new URLSearchParams();
+      params.append('grant_type', 'password');
+      params.append('username', this.username);
+      params.append('password', this.password);
+      params.append('client_id', CLIENT_ID);
+
+      const response = await this.axiosInstance.post("/token", params.toString(), {
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       });
 
       this.token = response.data;
@@ -62,10 +67,15 @@ class NowCertsClient {
     }
 
     try {
-      const response = await this.axiosInstance.post("/token", {
-        grant_type: "refresh_token",
-        refresh_token: this.token.refresh_token,
-        client_id: CLIENT_ID,
+      const params = new URLSearchParams();
+      params.append('grant_type', 'refresh_token');
+      params.append('refresh_token', this.token.refresh_token);
+      params.append('client_id', CLIENT_ID);
+
+      const response = await this.axiosInstance.post("/token", params.toString(), {
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       });
 
       this.token = response.data;
@@ -83,20 +93,36 @@ class NowCertsClient {
     }
 
     try {
-      const response = await this.axiosInstance.request({
+      // For GET requests, use query params; for POST/PUT/DELETE, use body
+      const config: any = {
         method,
         url: endpoint,
-        data,
-      });
+      };
+
+      if (method.toUpperCase() === 'GET' && data) {
+        config.params = data;  // Query parameters for GET
+      } else if (data) {
+        config.data = data;    // Body data for POST/PUT/DELETE
+      }
+
+      const response = await this.axiosInstance.request(config);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
         await this.refreshToken();
-        const response = await this.axiosInstance.request({
+
+        const config: any = {
           method,
           url: endpoint,
-          data,
-        });
+        };
+
+        if (method.toUpperCase() === 'GET' && data) {
+          config.params = data;
+        } else if (data) {
+          config.data = data;
+        }
+
+        const response = await this.axiosInstance.request(config);
         return response.data;
       }
       throw error;
@@ -106,38 +132,112 @@ class NowCertsClient {
 
 // Tool definitions for all NowCerts endpoints
 const tools: Tool[] = [
-  // ========== AGENT ENDPOINTS ==========
+  // ========== SCHEMA & METADATA ENDPOINTS ==========
   {
-    name: "nowcerts_agent_getList",
-    description: "Retrieve a list of agents with search, filtering, and pagination",
+    name: "nowcerts_schema_getMetadata",
+    description: `Get the OData schema metadata for NowCerts API. This returns the complete schema including field types, relationships, and entity definitions.
+
+Use this to:
+- Understand available fields for each entity
+- Check field data types and requirements
+- View entity relationships
+- See which fields are required vs optional
+
+Endpoints:
+- General metadata: /api/$metadata
+- Specific entity: /api/$metadata#EntityName (e.g., #PolicyDetailList, #InsuredList, #AgentList)
+
+NOTE: Many fields require specific enumeration values. Use nowcerts_schema_getLookupTables to see valid values for enum fields.`,
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria for filtering agents",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-          description: "Columns to return in the response",
-        },
-        order_by: {
+        entity: {
           type: "string",
-          description: "Field to order results by",
+          description: "Optional: Specific entity name (e.g., 'PolicyDetailList', 'InsuredList'). Leave empty for full metadata.",
         },
-        order_by_direction: {
+      },
+    },
+  },
+  {
+    name: "nowcerts_schema_getLookupTables",
+    description: `Get documentation for NowCerts lookup tables (enumeration values).
+
+Many fields require specific enumeration values. This tool provides the complete reference for:
+- GenderCode (M=Male, F=Female)
+- MaritalStatusCode (S=Single, M=Married, etc.)
+- PolicyBusinessType (New_Business, Renewal, Rewrite)
+- PolicyStatus (Active, Expired, Cancelled, etc.)
+- VehicleType (Truck, Car, SUV, etc.)
+- ContactType (Owner, Spouse, Child, etc.)
+- ClaimStatus (Open, Closed, Pending_Submission, etc.)
+- And 50+ other enumeration tables
+
+IMPORTANT FIELDS REQUIRING ENUM VALUES:
+- Policy: businessType, businessSubType, billingType, status
+- Vehicle: vehicleType, vehicleTypeOfUse, bodyTypeCode, garageCode
+- Driver: genderCode, maritalStatusCode, licenseClassCode, licenseStatusCode
+- Contact: contactType, prefix, suffix, education
+- Claim: claimStatus
+- Insured: insuredType, preferredLanguage
+- Address: addressType
+
+Full documentation: https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdzDF2ClmPvkfnVmdh1bGc/edit?tab=t.0`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        table_name: {
           type: "string",
-          enum: ["asc", "desc"],
-          description: "Order direction",
+          description: "Optional: Specific lookup table name (e.g., 'PolicyStatus', 'VehicleType'). Leave empty to get reference info for all tables.",
         },
-        page: {
-          type: "number",
-          description: "Page number for pagination",
+      },
+    },
+  },
+
+  // ========== AGENT ENDPOINTS ==========
+  {
+    name: "nowcerts_agent_getList",
+    description: `Retrieve agents from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first). The 'changeDate' field exists on all entities.
+
+Common $filter examples:
+- Active agents only: "active eq true"
+- Search by first name: "contains(firstName, 'John')"
+- Search by last name: "contains(lastName, 'Smith')"
+- Search by email: "contains(email, 'agent@example.com')"
+- Multiple conditions: "active eq true and contains(lastName, 'Smith')"
+
+Pagination examples:
+- First 100 active agents: $filter=active eq true&$top=100&$skip=0&$orderby=firstName asc
+- Next 100: $filter=active eq true&$top=100&$skip=100&$orderby=firstName asc
+
+Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active, primaryRole, npnNumber, isDefaultAgent, userId, userDisplayName, changeDate, etc.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression (optional). Example: 'active eq true'",
         },
-        per_page: {
+        $top: {
           type: "number",
-          description: "Number of results per page",
+          description: "Number of records to return (limit). Example: 100",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Example: 0 for first page, 100 for second page",
+        },
+        $orderby: {
+          type: "string",
+          description: "Field to order by. Default: 'changeDate desc'. Examples: 'firstName asc', 'lastName desc', 'changeDate desc'",
+        },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (optional). Example: 'id,firstName,lastName,email,active'",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
         },
       },
     },
@@ -146,29 +246,58 @@ const tools: Tool[] = [
   // ========== INSURED ENDPOINTS ==========
   {
     name: "nowcerts_insured_getList",
-    description: "Retrieve a paginated list of insureds using /api/InsuredList()",
+    description: `Retrieve insureds from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+ID FIELD NAMING:
+- On Insured object itself: Use "ID" (the primary UUID)
+- On related objects (policies, etc.): Use "insuredDatabaseId" to link to insureds
+- In Zapier endpoints: Use "insured_database_id"
+This UUID is the primary key to link policies, claims, and other objects back to the insured/prospect.
+
+Common $filter examples:
+- Search by ID: "ID eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
+- Search by name: "contains(InsuredFirstName, 'John') or contains(InsuredLastName, 'Smith')"
+- Search by email: "contains(InsuredEmail, 'test@example.com')"
+- Search by phone (format as ###-###-####): "contains(InsuredPhoneNumber, '555-123-4567')"
+- Search by city/state: "InsuredCity eq 'Nashville' and InsuredState eq 'TN'"
+- Commercial insureds: "InsuredType eq 'Commercial'"
+
+Pagination examples:
+- First 100 with filter: $filter=InsuredType eq 'Personal'&$top=100&$skip=0&$orderby=InsuredLastName asc
+- Combine all params: $filter=contains(InsuredEmail, 'gmail')&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
+
+Available fields: ID, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria for filtering insureds",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-          description: "Columns to return",
-        },
-        order_by: {
+        $filter: {
           type: "string",
-          description: "Field to order by",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        order_by_direction: {
+        $top: {
+          type: "number",
+          description: "Number of records to return (limit). Example: 100",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Example: 0",
+        },
+        $orderby: {
           type: "string",
-          enum: ["asc", "desc"],
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'InsuredLastName asc'",
         },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
+        },
       },
     },
   },
@@ -249,28 +378,65 @@ const tools: Tool[] = [
   // ========== POLICY ENDPOINTS ==========
   {
     name: "nowcerts_policy_getList",
-    description: "Get paginated list of policies using /api/PolicyList()",
+    description: `Get policies from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+ID FIELD NAMING:
+- Policy's own ID: "databaseId" (the policy's UUID)
+- Link to insured: "insuredDatabaseId" (UUID linking to the insured/prospect)
+- When linking other objects (vehicles, drivers) to this policy: Use "policyDatabaseId"
+These UUIDs are used to relate policies to insureds and to link related objects like vehicles, drivers, etc.
+
+Common $filter examples:
+- Search by policy ID: "databaseId eq '1a847475-baf3-4ff6-b0ee-f26c3fa88720'"
+- Search by insured ID: "insuredDatabaseId eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
+- Search by insured phone (format as ###-###-####): "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredCellPhone, '555-123-4567') or contains(insuredSMSPhone, '555-123-4567'))"
+- Search by insured email: "contains(insuredEmail, 'test@example.com')"
+- Search by policy number: "contains(number, 'POL123456')"
+- Active policies only: "active eq true"
+- Policies by status: "status eq 'Active'" or "status eq 'Expired'" or "status eq 'Renewed'"
+- Quotes only: "isQuote eq true"
+- By carrier: "contains(carrierName, 'PROGRESSIVE')"
+- By date range: "effectiveDate ge 2024-01-01T00:00:00Z and effectiveDate le 2024-12-31T00:00:00Z"
+- Expiring soon: "expirationDate le 2025-12-31T00:00:00Z and active eq true"
+- By insured type: "insuredType eq 'Personal'" or "insuredType eq 'Commercial'"
+- Complex search: "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredEmail, 'test@example.com')) and active eq true"
+
+PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
+
+Pagination examples:
+- Active policies only: $filter=active eq true&$top=100&$skip=0&$orderby=effectiveDate desc
+- Combine filter + pagination: $filter=status eq 'Active'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: databaseId, insuredDatabaseId, number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, carrierName, totalPremium, active, status, insuredType, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: {
-          type: "object",
-          description: "Search criteria (is_quote, search_string, etc.)",
-        },
-        columns: {
-          type: "array",
-          items: { type: "string" },
-        },
-        order_by: {
+        $filter: {
           type: "string",
-          description: "Field to order by (businessSubType, effectiveDate, expirationDate)",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        order_by_direction: {
+        $top: {
+          type: "number",
+          description: "Number of records to return (limit). Example: 100",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Example: 0",
+        },
+        $orderby: {
           type: "string",
-          enum: ["asc", "desc"],
+          description: "Field to order by. Default: 'changeDate desc'. Examples: 'effectiveDate desc', 'expirationDate asc'",
         },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
+        },
       },
     },
   },
@@ -439,16 +605,51 @@ const tools: Tool[] = [
   // ========== CLAIM ENDPOINTS ==========
   {
     name: "nowcerts_claim_getList",
-    description: "Get paginated list of claims using /api/ClaimList()",
+    description: `Get claims from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+Common $filter examples:
+- Search by claim number: "contains(ClaimNumber, '12345')"
+- Search by policy number: "contains(PolicyNumber, 'MT949221291')"
+- By status: "ClaimStatus eq 'Open'" or "ClaimStatus eq 'Closed'"
+- By date range: "ClaimDate ge 2024-01-01T00:00:00Z and ClaimDate le 2024-12-31T00:00:00Z"
+- By insured name: "contains(InsuredName, 'Henderson')"
+- Recent claims: "ClaimDate ge 2024-01-01T00:00:00Z"
+- Open claims only: "ClaimStatus eq 'Open'"
+
+Pagination examples:
+- Open claims: $filter=ClaimStatus eq 'Open'&$top=100&$skip=0&$orderby=ClaimDate desc
+- Combine params: $filter=ClaimStatus eq 'Open'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, InsuredName, ClaimAmount, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: { type: "object" },
-        columns: { type: "array", items: { type: "string" } },
-        order_by: { type: "string" },
-        order_by_direction: { type: "string", enum: ["asc", "desc"] },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $filter: {
+          type: "string",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
+        },
+        $top: {
+          type: "number",
+          description: "Number of records to return (limit). Example: 100",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Example: 0",
+        },
+        $orderby: {
+          type: "string",
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'ClaimDate desc'",
+        },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
+        },
       },
     },
   },
@@ -535,23 +736,35 @@ const tools: Tool[] = [
   // ========== DRIVER ENDPOINTS ==========
   {
     name: "nowcerts_driver_getDrivers",
-    description: "Get drivers via Zapier endpoint",
+    description: `Get drivers via Zapier endpoint. Drivers are linked to policies.
+
+ID FIELD NAMING:
+- Driver's own ID: "databaseId" (UUID)
+- Link to policy: "policyDatabaseId" (UUID of the policy this driver belongs to)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
     inputSchema: {
       type: "object",
       properties: {
-        filters: { type: "object" },
+        filters: {
+          type: "object",
+          description: "Filter by policyDatabaseId, databaseId, or other driver fields"
+        },
       },
     },
   },
   {
     name: "nowcerts_driver_insert",
-    description: "Insert a new driver",
+    description: `Insert a new driver. Must include policyDatabaseId to link to a policy.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required - UUID of the policy)
+- Driver's ID will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         driver: {
           type: "object",
-          description: "Driver data",
+          description: "Driver data including policyDatabaseId (required)",
           required: true,
         },
       },
@@ -560,14 +773,18 @@ const tools: Tool[] = [
   },
   {
     name: "nowcerts_driver_bulkInsert",
-    description: "Bulk insert multiple drivers",
+    description: `Bulk insert multiple drivers. Each must include policyDatabaseId.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required for each driver)
+- Driver IDs will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         drivers: {
           type: "array",
           items: { type: "object" },
-          description: "Array of driver data",
+          description: "Array of driver data, each with policyDatabaseId",
           required: true,
         },
       },
@@ -578,23 +795,35 @@ const tools: Tool[] = [
   // ========== VEHICLE ENDPOINTS ==========
   {
     name: "nowcerts_vehicle_getVehicles",
-    description: "Get vehicles via Zapier endpoint",
+    description: `Get vehicles via Zapier endpoint. Vehicles are linked to policies.
+
+ID FIELD NAMING:
+- Vehicle's own ID: "databaseId" (UUID)
+- Link to policy: "policyDatabaseId" (UUID of the policy this vehicle belongs to)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
     inputSchema: {
       type: "object",
       properties: {
-        filters: { type: "object" },
+        filters: {
+          type: "object",
+          description: "Filter by policyDatabaseId, databaseId, VIN, or other vehicle fields"
+        },
       },
     },
   },
   {
     name: "nowcerts_vehicle_insert",
-    description: "Insert a new vehicle",
+    description: `Insert a new vehicle. Must include policyDatabaseId to link to a policy.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required - UUID of the policy)
+- Vehicle's ID will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         vehicle: {
           type: "object",
-          description: "Vehicle data",
+          description: "Vehicle data including policyDatabaseId (required)",
           required: true,
         },
       },
@@ -603,14 +832,18 @@ const tools: Tool[] = [
   },
   {
     name: "nowcerts_vehicle_bulkInsert",
-    description: "Bulk insert multiple vehicles",
+    description: `Bulk insert multiple vehicles. Each must include policyDatabaseId.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required for each vehicle)
+- Vehicle IDs will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         vehicles: {
           type: "array",
           items: { type: "object" },
-          description: "Array of vehicle data",
+          description: "Array of vehicle data, each with policyDatabaseId",
           required: true,
         },
       },
@@ -905,16 +1138,49 @@ const tools: Tool[] = [
   // ========== PRINCIPAL ENDPOINTS ==========
   {
     name: "nowcerts_principal_getList",
-    description: "Get paginated list of principals",
+    description: `Get principals (additional insureds/interested parties) from NowCerts using OData query parameters.
+
+IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
+
+Common $filter examples:
+- Search by name: "contains(PrincipalName, 'Smith')"
+- Search by email: "contains(Email, 'principal@example.com')"
+- By type: "PrincipalType eq 'Additional Insured'" or "PrincipalType eq 'Loss Payee'"
+- Active principals: "Active eq true"
+- By policy: "PolicyId eq 'guid-here'"
+
+Pagination examples:
+- Active principals: $filter=Active eq true&$top=100&$skip=0&$orderby=PrincipalName asc
+- Combine params: $filter=Active eq true&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+
+Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, PolicyId, Active, changeDate, etc.`,
     inputSchema: {
       type: "object",
       properties: {
-        search_criteria: { type: "object" },
-        columns: { type: "array", items: { type: "string" } },
-        order_by: { type: "string" },
-        order_by_direction: { type: "string", enum: ["asc", "desc"] },
-        page: { type: "number" },
-        per_page: { type: "number" },
+        $filter: {
+          type: "string",
+          description: "OData filter expression (optional). Can be combined with other parameters.",
+        },
+        $top: {
+          type: "number",
+          description: "Number of records to return (limit). Example: 100",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip (offset). Example: 0",
+        },
+        $orderby: {
+          type: "string",
+          description: "Field to order by. Default: 'changeDate desc'. Example: 'PrincipalName asc'",
+        },
+        $select: {
+          type: "string",
+          description: "Comma-separated list of columns to return (optional)",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response. Set to true to get @odata.count field.",
+        },
       },
     },
   },
@@ -1166,11 +1432,15 @@ const tools: Tool[] = [
 
 // Endpoint mapping for tool execution
 const endpointMap: Record<string, { method: string; path: string }> = {
+  // Schema & Metadata
+  nowcerts_schema_getMetadata: { method: "GET", path: "/$metadata" },
+  nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
+
   // Agent
-  nowcerts_agent_getList: { method: "GET", path: "/AgentList()" },
+  nowcerts_agent_getList: { method: "GET", path: "/AgentList" },
 
   // Insured
-  nowcerts_insured_getList: { method: "GET", path: "/InsuredList()" },
+  nowcerts_insured_getList: { method: "GET", path: "/InsuredList" },
   nowcerts_insured_getInsureds: { method: "GET", path: "/Zapier/GetInsureds" },
   nowcerts_insured_insert: { method: "POST", path: "/Insured/Insert" },
   nowcerts_insured_insertNoOverride: {
@@ -1187,7 +1457,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   },
 
   // Policy
-  nowcerts_policy_getList: { method: "GET", path: "/PolicyList()" },
+  nowcerts_policy_getList: { method: "GET", path: "/PolicyList" },
   nowcerts_policy_getPolicies: { method: "GET", path: "/Policy/FindPolicies" },
   nowcerts_policy_get: { method: "GET", path: "/PolicyList" },
   nowcerts_policy_insert: { method: "POST", path: "/Policy/Insert" },
@@ -1217,7 +1487,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   },
 
   // Claim
-  nowcerts_claim_getList: { method: "GET", path: "/ClaimList()" },
+  nowcerts_claim_getList: { method: "GET", path: "/ClaimList" },
   nowcerts_claim_getClaims: { method: "GET", path: "/Zapier/GetClaims" },
   nowcerts_claim_insert: { method: "POST", path: "/Zapier/InsertClaim" },
 
@@ -1328,7 +1598,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   nowcerts_sms_twilio: { method: "POST", path: "/Twilio/Sms" },
 
   // Principal
-  nowcerts_principal_getList: { method: "GET", path: "/PrincipalList()" },
+  nowcerts_principal_getList: { method: "GET", path: "/PrincipalList" },
   nowcerts_principal_getPrincipals: {
     method: "GET",
     path: "/Zapier/GetPrincipals",
@@ -1432,9 +1702,365 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const toolName = request.params.name;
   const args = request.params.arguments || {};
 
+  // Special handler for lookup tables documentation
+  if (toolName === "nowcerts_schema_getLookupTables") {
+    const lookupTablesDoc = `# NowCerts API Lookup Tables (Enumeration Values)
+
+Many fields in the NowCerts API require specific enumeration values from lookup tables. Below is a reference guide for the most commonly used lookup tables.
+
+## Common Lookup Tables
+
+### GenderCode
+- M = Male
+- F = Female
+
+### MaritalStatusCode
+- S = Single
+- M = Married
+- D = Divorced
+- W = Widowed
+- P = Separated
+
+### PolicyBusinessType
+- New_Business
+- Renewal
+- Rewrite
+- Reinstatement
+
+### PolicyBusinessSubType
+- New
+- Renewal
+- Rewrite
+- Transfer
+
+### PolicyStatus
+- Active
+- Expired
+- Cancelled
+- Renewed
+- Pending
+- Quote
+
+### PolicyBillingType
+- Direct
+- Agency
+- Mortgagee
+
+### VehicleType
+- Truck
+- Car
+- SUV
+- Van
+- Motorcycle
+- RV
+- Trailer
+- Other
+
+### VehicleTypeOfUse
+- Business
+- Pleasure
+- Commute
+- Farm
+
+### VehicleBodyTypeCode
+- Sedan
+- Coupe
+- Convertible
+- SUV
+- Truck
+- Van
+- Wagon
+
+### VehicleGarageCode
+- G = Garaged
+- P = Parked on Street
+- O = Other
+
+### DriverLicenseClassCode
+- A = Motorcycle
+- B = Non-commercial vehicle
+- C = Commercial vehicle
+
+### DriverLicenseStatusCode
+- V = Valid
+- S = Suspended
+- R = Revoked
+- E = Expired
+
+### ContactType
+- Owner
+- Spouse
+- Child
+- Parent
+- Sibling
+- Business_Contact
+- Emergency_Contact
+- Other
+
+### ContactPrefix
+- Mr
+- Mrs
+- Ms
+- Miss
+- Dr
+
+### ContactSuffix
+- Jr
+- Sr
+- II
+- III
+- IV
+
+### ContactEducation
+- High_School
+- Some_College
+- Associates
+- Bachelors
+- Masters
+- Doctorate
+
+### ClaimStatus
+- Open
+- Closed
+- Pending_Submission
+- Under_Review
+- Paid
+- Denied
+
+### InsuredType
+- Personal
+- Commercial
+
+### AddressType
+- Home
+- Business
+- Mailing
+- Billing
+- Other
+
+### PhoneType
+- Home
+- Work
+- Mobile
+- Fax
+- Other
+
+### EmailType
+- Personal
+- Work
+- Other
+
+### PropertyType
+- Single_Family
+- Multi_Family
+- Condo
+- Mobile_Home
+- Commercial
+
+### PropertyOccupancy
+- Owner_Occupied
+- Tenant_Occupied
+- Vacant
+- Seasonal
+
+### PropertyConstructionType
+- Frame
+- Masonry
+- Superior
+- Fire_Resistive
+
+### TaskPriority
+- Low
+- Normal
+- High
+- Urgent
+
+### TaskStatus
+- Not_Started
+- In_Progress
+- Completed
+- Cancelled
+- On_Hold
+
+### OpportunityStage
+- Lead
+- Prospect
+- Quote
+- Proposal
+- Negotiation
+- Closed_Won
+- Closed_Lost
+
+### ServiceRequestStatus
+- Pending
+- In_Progress
+- Completed
+- Cancelled
+
+### CoverageCode
+Various coverage codes depending on policy type (Auto, Home, Commercial, etc.)
+
+### LineOfBusiness
+- Personal_Auto
+- Commercial_Auto
+- Homeowners
+- Commercial_Property
+- Workers_Compensation
+- General_Liability
+- Professional_Liability
+- Life
+- Health
+- Other
+
+### AgentRole
+- Primary
+- Secondary
+- CSR
+- Producer
+
+### PaymentMethod
+- Check
+- Credit_Card
+- ACH
+- Cash
+- Money_Order
+
+### PaymentFrequency
+- Annual
+- Semi_Annual
+- Quarterly
+- Monthly
+- Weekly
+
+### ReferralSource
+- Client
+- Agent
+- Website
+- Social_Media
+- Advertisement
+- Other
+
+### PreferredLanguage
+- English
+- Spanish
+- French
+- Other
+
+## Important Notes
+
+1. **Case Sensitivity**: Enumeration values are typically case-sensitive. Use the exact casing shown above.
+
+2. **Underscore vs Spaces**: Most enum values use underscores instead of spaces (e.g., "New_Business" not "New Business").
+
+3. **Validation**: The API will return an error if you use an invalid enumeration value. Always check the spelling and casing.
+
+4. **Entity-Specific Fields**:
+   - Policy fields: businessType, businessSubType, billingType, status, lineOfBusiness
+   - Vehicle fields: vehicleType, vehicleTypeOfUse, bodyTypeCode, garageCode
+   - Driver fields: genderCode, maritalStatusCode, licenseClassCode, licenseStatusCode
+   - Contact fields: contactType, prefix, suffix, education
+   - Claim fields: claimStatus
+   - Address fields: addressType
+   - Task fields: priority, status
+   - Opportunity fields: stage
+
+5. **Getting Current Values**: Use the $metadata endpoint to see the current schema and available enum values for your NowCerts instance.
+
+## Full Documentation
+
+For the complete and most up-to-date list of lookup tables and enumeration values, refer to:
+https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdzDF2ClmPvkfnVmdh1bGc/edit?tab=t.0
+
+Additional API documentation:
+- https://api.nowcerts.com/
+- https://api.nowcerts.com/Help
+`;
+
+    const tableName = args.table_name;
+    if (tableName) {
+      // Filter to show only the requested table
+      const lines = lookupTablesDoc.split('\n');
+      const tableIndex = lines.findIndex(line => line.includes(`### ${tableName}`));
+      if (tableIndex !== -1) {
+        // Find the next ### or ## to know where this section ends
+        let endIndex = lines.findIndex((line, idx) =>
+          idx > tableIndex && (line.startsWith('### ') || line.startsWith('## '))
+        );
+        if (endIndex === -1) endIndex = lines.length;
+
+        const tableSection = lines.slice(tableIndex, endIndex).join('\n');
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# ${tableName} Lookup Table\n\n${tableSection}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Table "${tableName}" not found in documentation. Use the tool without table_name parameter to see all available lookup tables.`,
+            },
+          ],
+        };
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: lookupTablesDoc,
+        },
+      ],
+    };
+  }
+
+  // Special handler for metadata with entity parameter
+  if (toolName === "nowcerts_schema_getMetadata") {
+    const entity = args.entity;
+    let metadataPath = "/$metadata";
+
+    if (entity) {
+      // Append entity name with # (e.g., /$metadata#PolicyDetailList)
+      metadataPath = `/$metadata#${entity}`;
+    }
+
+    try {
+      const result = await client.request("GET", metadataPath, {});
+      return {
+        content: [
+          {
+            type: "text",
+            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
   const endpoint = endpointMap[toolName];
   if (!endpoint) {
     throw new Error(`Unknown tool: ${toolName}`);
+  }
+
+  // Add default $orderby=changeDate desc for List endpoints if not specified
+  const isListEndpoint = endpoint.path.includes('List') && endpoint.method === 'GET';
+  if (isListEndpoint && !args.$orderby) {
+    args.$orderby = 'changeDate desc';
   }
 
   try {
