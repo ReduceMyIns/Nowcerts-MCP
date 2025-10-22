@@ -116,6 +116,67 @@ class NowCertsClient {
 
 // Tool definitions for all NowCerts endpoints
 const tools: Tool[] = [
+  // ========== SCHEMA & METADATA ENDPOINTS ==========
+  {
+    name: "nowcerts_schema_getMetadata",
+    description: `Get the OData schema metadata for NowCerts API. This returns the complete schema including field types, relationships, and entity definitions.
+
+Use this to:
+- Understand available fields for each entity
+- Check field data types and requirements
+- View entity relationships
+- See which fields are required vs optional
+
+Endpoints:
+- General metadata: /api/$metadata
+- Specific entity: /api/$metadata#EntityName (e.g., #PolicyDetailList, #InsuredList, #AgentList)
+
+NOTE: Many fields require specific enumeration values. Use nowcerts_schema_getLookupTables to see valid values for enum fields.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        entity: {
+          type: "string",
+          description: "Optional: Specific entity name (e.g., 'PolicyDetailList', 'InsuredList'). Leave empty for full metadata.",
+        },
+      },
+    },
+  },
+  {
+    name: "nowcerts_schema_getLookupTables",
+    description: `Get documentation for NowCerts lookup tables (enumeration values).
+
+Many fields require specific enumeration values. This tool provides the complete reference for:
+- GenderCode (M=Male, F=Female)
+- MaritalStatusCode (S=Single, M=Married, etc.)
+- PolicyBusinessType (New_Business, Renewal, Rewrite)
+- PolicyStatus (Active, Expired, Cancelled, etc.)
+- VehicleType (Truck, Car, SUV, etc.)
+- ContactType (Owner, Spouse, Child, etc.)
+- ClaimStatus (Open, Closed, Pending_Submission, etc.)
+- And 50+ other enumeration tables
+
+IMPORTANT FIELDS REQUIRING ENUM VALUES:
+- Policy: businessType, businessSubType, billingType, status
+- Vehicle: vehicleType, vehicleTypeOfUse, bodyTypeCode, garageCode
+- Driver: genderCode, maritalStatusCode, licenseClassCode, licenseStatusCode
+- Contact: contactType, prefix, suffix, education
+- Claim: claimStatus
+- Insured: insuredType, preferredLanguage
+- Address: addressType
+
+Full documentation: https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdzDF2ClmPvkfnVmdh1bGc/edit?tab=t.0`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        table_name: {
+          type: "string",
+          description: "Optional: Specific lookup table name (e.g., 'PolicyStatus', 'VehicleType'). Leave empty to get reference info for all tables.",
+        },
+      },
+    },
+  },
+
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
@@ -1305,6 +1366,10 @@ Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, Polic
 
 // Endpoint mapping for tool execution
 const endpointMap: Record<string, { method: string; path: string }> = {
+  // Schema & Metadata
+  nowcerts_schema_getMetadata: { method: "GET", path: "/$metadata" },
+  nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
+
   // Agent
   nowcerts_agent_getList: { method: "GET", path: "/AgentList()" },
 
@@ -1570,6 +1635,356 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const toolName = request.params.name;
   const args = request.params.arguments || {};
+
+  // Special handler for lookup tables documentation
+  if (toolName === "nowcerts_schema_getLookupTables") {
+    const lookupTablesDoc = `# NowCerts API Lookup Tables (Enumeration Values)
+
+Many fields in the NowCerts API require specific enumeration values from lookup tables. Below is a reference guide for the most commonly used lookup tables.
+
+## Common Lookup Tables
+
+### GenderCode
+- M = Male
+- F = Female
+
+### MaritalStatusCode
+- S = Single
+- M = Married
+- D = Divorced
+- W = Widowed
+- P = Separated
+
+### PolicyBusinessType
+- New_Business
+- Renewal
+- Rewrite
+- Reinstatement
+
+### PolicyBusinessSubType
+- New
+- Renewal
+- Rewrite
+- Transfer
+
+### PolicyStatus
+- Active
+- Expired
+- Cancelled
+- Renewed
+- Pending
+- Quote
+
+### PolicyBillingType
+- Direct
+- Agency
+- Mortgagee
+
+### VehicleType
+- Truck
+- Car
+- SUV
+- Van
+- Motorcycle
+- RV
+- Trailer
+- Other
+
+### VehicleTypeOfUse
+- Business
+- Pleasure
+- Commute
+- Farm
+
+### VehicleBodyTypeCode
+- Sedan
+- Coupe
+- Convertible
+- SUV
+- Truck
+- Van
+- Wagon
+
+### VehicleGarageCode
+- G = Garaged
+- P = Parked on Street
+- O = Other
+
+### DriverLicenseClassCode
+- A = Motorcycle
+- B = Non-commercial vehicle
+- C = Commercial vehicle
+
+### DriverLicenseStatusCode
+- V = Valid
+- S = Suspended
+- R = Revoked
+- E = Expired
+
+### ContactType
+- Owner
+- Spouse
+- Child
+- Parent
+- Sibling
+- Business_Contact
+- Emergency_Contact
+- Other
+
+### ContactPrefix
+- Mr
+- Mrs
+- Ms
+- Miss
+- Dr
+
+### ContactSuffix
+- Jr
+- Sr
+- II
+- III
+- IV
+
+### ContactEducation
+- High_School
+- Some_College
+- Associates
+- Bachelors
+- Masters
+- Doctorate
+
+### ClaimStatus
+- Open
+- Closed
+- Pending_Submission
+- Under_Review
+- Paid
+- Denied
+
+### InsuredType
+- Personal
+- Commercial
+
+### AddressType
+- Home
+- Business
+- Mailing
+- Billing
+- Other
+
+### PhoneType
+- Home
+- Work
+- Mobile
+- Fax
+- Other
+
+### EmailType
+- Personal
+- Work
+- Other
+
+### PropertyType
+- Single_Family
+- Multi_Family
+- Condo
+- Mobile_Home
+- Commercial
+
+### PropertyOccupancy
+- Owner_Occupied
+- Tenant_Occupied
+- Vacant
+- Seasonal
+
+### PropertyConstructionType
+- Frame
+- Masonry
+- Superior
+- Fire_Resistive
+
+### TaskPriority
+- Low
+- Normal
+- High
+- Urgent
+
+### TaskStatus
+- Not_Started
+- In_Progress
+- Completed
+- Cancelled
+- On_Hold
+
+### OpportunityStage
+- Lead
+- Prospect
+- Quote
+- Proposal
+- Negotiation
+- Closed_Won
+- Closed_Lost
+
+### ServiceRequestStatus
+- Pending
+- In_Progress
+- Completed
+- Cancelled
+
+### CoverageCode
+Various coverage codes depending on policy type (Auto, Home, Commercial, etc.)
+
+### LineOfBusiness
+- Personal_Auto
+- Commercial_Auto
+- Homeowners
+- Commercial_Property
+- Workers_Compensation
+- General_Liability
+- Professional_Liability
+- Life
+- Health
+- Other
+
+### AgentRole
+- Primary
+- Secondary
+- CSR
+- Producer
+
+### PaymentMethod
+- Check
+- Credit_Card
+- ACH
+- Cash
+- Money_Order
+
+### PaymentFrequency
+- Annual
+- Semi_Annual
+- Quarterly
+- Monthly
+- Weekly
+
+### ReferralSource
+- Client
+- Agent
+- Website
+- Social_Media
+- Advertisement
+- Other
+
+### PreferredLanguage
+- English
+- Spanish
+- French
+- Other
+
+## Important Notes
+
+1. **Case Sensitivity**: Enumeration values are typically case-sensitive. Use the exact casing shown above.
+
+2. **Underscore vs Spaces**: Most enum values use underscores instead of spaces (e.g., "New_Business" not "New Business").
+
+3. **Validation**: The API will return an error if you use an invalid enumeration value. Always check the spelling and casing.
+
+4. **Entity-Specific Fields**:
+   - Policy fields: businessType, businessSubType, billingType, status, lineOfBusiness
+   - Vehicle fields: vehicleType, vehicleTypeOfUse, bodyTypeCode, garageCode
+   - Driver fields: genderCode, maritalStatusCode, licenseClassCode, licenseStatusCode
+   - Contact fields: contactType, prefix, suffix, education
+   - Claim fields: claimStatus
+   - Address fields: addressType
+   - Task fields: priority, status
+   - Opportunity fields: stage
+
+5. **Getting Current Values**: Use the $metadata endpoint to see the current schema and available enum values for your NowCerts instance.
+
+## Full Documentation
+
+For the complete and most up-to-date list of lookup tables and enumeration values, refer to:
+https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdzDF2ClmPvkfnVmdh1bGc/edit?tab=t.0
+
+Additional API documentation:
+- https://api.nowcerts.com/
+- https://api.nowcerts.com/Help
+`;
+
+    const tableName = args.table_name;
+    if (tableName) {
+      // Filter to show only the requested table
+      const lines = lookupTablesDoc.split('\n');
+      const tableIndex = lines.findIndex(line => line.includes(`### ${tableName}`));
+      if (tableIndex !== -1) {
+        // Find the next ### or ## to know where this section ends
+        let endIndex = lines.findIndex((line, idx) =>
+          idx > tableIndex && (line.startsWith('### ') || line.startsWith('## '))
+        );
+        if (endIndex === -1) endIndex = lines.length;
+
+        const tableSection = lines.slice(tableIndex, endIndex).join('\n');
+        return {
+          content: [
+            {
+              type: "text",
+              text: `# ${tableName} Lookup Table\n\n${tableSection}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Table "${tableName}" not found in documentation. Use the tool without table_name parameter to see all available lookup tables.`,
+            },
+          ],
+        };
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: lookupTablesDoc,
+        },
+      ],
+    };
+  }
+
+  // Special handler for metadata with entity parameter
+  if (toolName === "nowcerts_schema_getMetadata") {
+    const entity = args.entity;
+    let metadataPath = "/$metadata";
+
+    if (entity) {
+      // Append entity name with # (e.g., /$metadata#PolicyDetailList)
+      metadataPath = `/$metadata#${entity}`;
+    }
+
+    try {
+      const result = await client.request("GET", metadataPath, {});
+      return {
+        content: [
+          {
+            type: "text",
+            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
 
   const endpoint = endpointMap[toolName];
   if (!endpoint) {
