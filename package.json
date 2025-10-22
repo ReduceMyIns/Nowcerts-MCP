@@ -1,0 +1,32 @@
+{
+  "name": "nowcerts-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for NowCerts API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "nowcerts-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "nowcerts",
+    "api",
+    "insurance"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
