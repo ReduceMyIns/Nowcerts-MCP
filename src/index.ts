@@ -39,11 +39,16 @@ class NowCertsClient {
 
   async authenticate(): Promise<void> {
     try {
-      const response = await this.axiosInstance.post("/token", {
-        grant_type: "password",
-        username: this.username,
-        password: this.password,
-        client_id: CLIENT_ID,
+      const params = new URLSearchParams();
+      params.append('grant_type', 'password');
+      params.append('username', this.username);
+      params.append('password', this.password);
+      params.append('client_id', CLIENT_ID);
+
+      const response = await this.axiosInstance.post("/token", params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
       this.token = response.data;
@@ -62,10 +67,15 @@ class NowCertsClient {
     }
 
     try {
-      const response = await this.axiosInstance.post("/token", {
-        grant_type: "refresh_token",
-        refresh_token: this.token.refresh_token,
-        client_id: CLIENT_ID,
+      const params = new URLSearchParams();
+      params.append('grant_type', 'refresh_token');
+      params.append('refresh_token', this.token.refresh_token);
+      params.append('client_id', CLIENT_ID);
+
+      const response = await this.axiosInstance.post("/token", params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
       this.token = response.data;
