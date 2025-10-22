@@ -93,20 +93,36 @@ class NowCertsClient {
     }
 
     try {
-      const response = await this.axiosInstance.request({
+      // For GET requests, use query params; for POST/PUT/DELETE, use body
+      const config: any = {
         method,
         url: endpoint,
-        data,
-      });
+      };
+
+      if (method.toUpperCase() === 'GET' && data) {
+        config.params = data;  // Query parameters for GET
+      } else if (data) {
+        config.data = data;    // Body data for POST/PUT/DELETE
+      }
+
+      const response = await this.axiosInstance.request(config);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 401) {
         await this.refreshToken();
-        const response = await this.axiosInstance.request({
+
+        const config: any = {
           method,
           url: endpoint,
-          data,
-        });
+        };
+
+        if (method.toUpperCase() === 'GET' && data) {
+          config.params = data;
+        } else if (data) {
+          config.data = data;
+        }
+
+        const response = await this.axiosInstance.request(config);
         return response.data;
       }
       throw error;
@@ -183,12 +199,13 @@ Full documentation: https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdz
     description: `Retrieve agents from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
 
 Common $filter examples:
-- Search by name: "contains(AgentName, 'Smith')"
-- Search by email: "contains(Email, 'agent@example.com')"
-- Active agents only: "Active eq true"
-- Multiple conditions: "Active eq true and contains(AgentName, 'John')"
+- Search by first name: "contains(firstName, 'John')"
+- Search by last name: "contains(lastName, 'Smith')"
+- Search by email: "contains(email, 'agent@example.com')"
+- Active agents only: "active eq true"
+- Multiple conditions: "active eq true and contains(lastName, 'Smith')"
 
-Available fields: AgentId, AgentName, Email, Phone, Active, etc.`,
+Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active, primaryRole, npnNumber, isDefaultAgent, userId, userDisplayName, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -206,11 +223,11 @@ Available fields: AgentId, AgentName, Email, Phone, Active, etc.`,
         },
         $orderby: {
           type: "string",
-          description: "Field to order by (e.g., 'AgentName asc' or 'AgentId desc'). Required with $top and $skip if not using $filter.",
+          description: "Field to order by (e.g., 'lastName asc' or 'changeDate desc'). Required with $top and $skip if not using $filter.",
         },
         $select: {
           type: "string",
-          description: "Comma-separated list of columns to return (e.g., 'AgentId,AgentName,Email')",
+          description: "Comma-separated list of columns to return (e.g., 'id,firstName,lastName,email,active')",
         },
       },
     },
@@ -1371,10 +1388,10 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
 
   // Agent
-  nowcerts_agent_getList: { method: "GET", path: "/AgentList()" },
+  nowcerts_agent_getList: { method: "GET", path: "/AgentList" },
 
   // Insured
-  nowcerts_insured_getList: { method: "GET", path: "/InsuredList()" },
+  nowcerts_insured_getList: { method: "GET", path: "/InsuredList" },
   nowcerts_insured_getInsureds: { method: "GET", path: "/Zapier/GetInsureds" },
   nowcerts_insured_insert: { method: "POST", path: "/Insured/Insert" },
   nowcerts_insured_insertNoOverride: {
@@ -1391,7 +1408,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   },
 
   // Policy
-  nowcerts_policy_getList: { method: "GET", path: "/PolicyList()" },
+  nowcerts_policy_getList: { method: "GET", path: "/PolicyList" },
   nowcerts_policy_getPolicies: { method: "GET", path: "/Policy/FindPolicies" },
   nowcerts_policy_get: { method: "GET", path: "/PolicyList" },
   nowcerts_policy_insert: { method: "POST", path: "/Policy/Insert" },
@@ -1421,7 +1438,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   },
 
   // Claim
-  nowcerts_claim_getList: { method: "GET", path: "/ClaimList()" },
+  nowcerts_claim_getList: { method: "GET", path: "/ClaimList" },
   nowcerts_claim_getClaims: { method: "GET", path: "/Zapier/GetClaims" },
   nowcerts_claim_insert: { method: "POST", path: "/Zapier/InsertClaim" },
 
@@ -1532,7 +1549,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   nowcerts_sms_twilio: { method: "POST", path: "/Twilio/Sms" },
 
   // Principal
-  nowcerts_principal_getList: { method: "GET", path: "/PrincipalList()" },
+  nowcerts_principal_getList: { method: "GET", path: "/PrincipalList" },
   nowcerts_principal_getPrincipals: {
     method: "GET",
     path: "/Zapier/GetPrincipals",
