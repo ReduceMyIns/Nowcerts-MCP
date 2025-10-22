@@ -160,17 +160,24 @@ Available fields: AgentId, AgentName, Email, Phone, Active, etc.`,
     name: "nowcerts_insured_getList",
     description: `Retrieve insureds from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
 
+IMPORTANT - ID FIELD NAMING:
+- On Insured object itself: Use "ID" (the primary UUID)
+- On related objects (policies, etc.): Use "insuredDatabaseId" to link to insureds
+- In Zapier endpoints: Use "insured_database_id"
+This UUID is the primary key to link policies, claims, and other objects back to the insured/prospect.
+
 Common $filter examples:
+- Search by ID: "ID eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
 - Search by name: "contains(InsuredFirstName, 'John') or contains(InsuredLastName, 'Smith')"
-- Search by email: "contains(InsuredEmail, 'john@example.com')"
-- Search by phone (IMPORTANT - format as ###-###-####): "contains(InsuredPhoneNumber, '615-568-2793') or contains(InsuredCellPhone, '615-568-2793')"
+- Search by email: "contains(InsuredEmail, 'test@example.com')"
+- Search by phone (IMPORTANT - format as ###-###-####): "contains(InsuredPhoneNumber, '555-123-4567') or contains(InsuredCellPhone, '555-123-4567')"
 - Search by city/state: "InsuredCity eq 'Nashville' and InsuredState eq 'TN'"
 - Commercial insureds: "InsuredType eq 'Commercial'"
-- Multiple conditions: "(contains(InsuredPhoneNumber, '615-568-2793') or contains(InsuredEmail, 'john@example.com'))"
+- Multiple conditions: "(contains(InsuredPhoneNumber, '555-123-4567') or contains(InsuredEmail, 'test@example.com'))"
 
-PHONE FORMAT: Always use ###-###-#### format for phone searches (e.g., '615-568-2793', NOT '6155682793')
+PHONE FORMAT: Always use ###-###-#### format for phone searches (e.g., '555-123-4567', NOT '5551234567')
 
-Available fields: InsuredId, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, etc.`,
+Available fields: ID (UUID), InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -276,10 +283,18 @@ Available fields: InsuredId, InsuredFirstName, InsuredLastName, InsuredEmail, In
     name: "nowcerts_policy_getList",
     description: `Get policies from NowCerts. Must provide either $filter OR all three of ($top, $skip, $orderby).
 
+IMPORTANT - ID FIELD NAMING:
+- Policy's own ID: "databaseId" (the policy's UUID)
+- Link to insured: "insuredDatabaseId" (UUID linking to the insured/prospect)
+- When linking other objects (vehicles, drivers) to this policy: Use "policyDatabaseId"
+These UUIDs are used to relate policies to insureds and to link related objects like vehicles, drivers, etc.
+
 Common $filter examples:
-- Search by insured phone (format as ###-###-####): "(contains(insuredPhoneNumber, '615-568-2793') or contains(insuredCellPhone, '615-568-2793') or contains(insuredSMSPhone, '615-568-2793'))"
-- Search by insured email: "contains(insuredEmail, 'john@example.com')"
-- Search by policy number: "contains(number, 'MT949221291')"
+- Search by policy ID: "databaseId eq '1a847475-baf3-4ff6-b0ee-f26c3fa88720'"
+- Search by insured ID: "insuredDatabaseId eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
+- Search by insured phone (format as ###-###-####): "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredCellPhone, '555-123-4567') or contains(insuredSMSPhone, '555-123-4567'))"
+- Search by insured email: "contains(insuredEmail, 'test@example.com')"
+- Search by policy number: "contains(number, 'POL123456')"
 - Active policies only: "active eq true"
 - Policies by status: "status eq 'Active'" or "status eq 'Expired'" or "status eq 'Renewed'"
 - Quotes only: "isQuote eq true"
@@ -287,11 +302,11 @@ Common $filter examples:
 - By date range: "effectiveDate ge 2024-01-01T00:00:00Z and effectiveDate le 2024-12-31T00:00:00Z"
 - Expiring soon: "expirationDate le 2025-12-31T00:00:00Z and active eq true"
 - By insured type: "insuredType eq 'Personal'" or "insuredType eq 'Commercial'"
-- Complex search: "(contains(insuredPhoneNumber, '615-568-2793') or contains(insuredEmail, 'john@example.com')) and active eq true"
+- Complex search: "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredEmail, 'test@example.com')) and active eq true"
 
-PHONE FORMAT: Always use ###-###-#### format (e.g., '615-568-2793', NOT '6155682793')
+PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
 
-Available fields: databaseId, number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, insuredCellPhone, insuredSMSPhone, carrierName, totalPremium, active, status, insuredType, etc.`,
+Available fields: databaseId (policy UUID), insuredDatabaseId (insured UUID), number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, insuredCellPhone, insuredSMSPhone, carrierName, totalPremium, active, status, insuredType, etc.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -604,23 +619,35 @@ Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, In
   // ========== DRIVER ENDPOINTS ==========
   {
     name: "nowcerts_driver_getDrivers",
-    description: "Get drivers via Zapier endpoint",
+    description: `Get drivers via Zapier endpoint. Drivers are linked to policies.
+
+ID FIELD NAMING:
+- Driver's own ID: "databaseId" (UUID)
+- Link to policy: "policyDatabaseId" (UUID of the policy this driver belongs to)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
     inputSchema: {
       type: "object",
       properties: {
-        filters: { type: "object" },
+        filters: {
+          type: "object",
+          description: "Filter by policyDatabaseId, databaseId, or other driver fields"
+        },
       },
     },
   },
   {
     name: "nowcerts_driver_insert",
-    description: "Insert a new driver",
+    description: `Insert a new driver. Must include policyDatabaseId to link to a policy.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required - UUID of the policy)
+- Driver's ID will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         driver: {
           type: "object",
-          description: "Driver data",
+          description: "Driver data including policyDatabaseId (required)",
           required: true,
         },
       },
@@ -629,14 +656,18 @@ Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, In
   },
   {
     name: "nowcerts_driver_bulkInsert",
-    description: "Bulk insert multiple drivers",
+    description: `Bulk insert multiple drivers. Each must include policyDatabaseId.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required for each driver)
+- Driver IDs will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         drivers: {
           type: "array",
           items: { type: "object" },
-          description: "Array of driver data",
+          description: "Array of driver data, each with policyDatabaseId",
           required: true,
         },
       },
@@ -647,23 +678,35 @@ Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, In
   // ========== VEHICLE ENDPOINTS ==========
   {
     name: "nowcerts_vehicle_getVehicles",
-    description: "Get vehicles via Zapier endpoint",
+    description: `Get vehicles via Zapier endpoint. Vehicles are linked to policies.
+
+ID FIELD NAMING:
+- Vehicle's own ID: "databaseId" (UUID)
+- Link to policy: "policyDatabaseId" (UUID of the policy this vehicle belongs to)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
     inputSchema: {
       type: "object",
       properties: {
-        filters: { type: "object" },
+        filters: {
+          type: "object",
+          description: "Filter by policyDatabaseId, databaseId, VIN, or other vehicle fields"
+        },
       },
     },
   },
   {
     name: "nowcerts_vehicle_insert",
-    description: "Insert a new vehicle",
+    description: `Insert a new vehicle. Must include policyDatabaseId to link to a policy.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required - UUID of the policy)
+- Vehicle's ID will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         vehicle: {
           type: "object",
-          description: "Vehicle data",
+          description: "Vehicle data including policyDatabaseId (required)",
           required: true,
         },
       },
@@ -672,14 +715,18 @@ Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, In
   },
   {
     name: "nowcerts_vehicle_bulkInsert",
-    description: "Bulk insert multiple vehicles",
+    description: `Bulk insert multiple vehicles. Each must include policyDatabaseId.
+
+ID FIELD NAMING:
+- Link to policy: "policyDatabaseId" (required for each vehicle)
+- Vehicle IDs will be auto-generated as "databaseId"`,
     inputSchema: {
       type: "object",
       properties: {
         vehicles: {
           type: "array",
           items: { type: "object" },
-          description: "Array of vehicle data",
+          description: "Array of vehicle data, each with policyDatabaseId",
           required: true,
         },
       },
