@@ -1709,6 +1709,234 @@ IMPORTANT:
       required: ["vin"],
     },
   },
+
+  // ========== ASKKODIAK API TOOLS ==========
+  {
+    name: "askkodiak_classifyBusiness",
+    description: `Classify a business by searching for matching NAICS codes using the AskKodiak API.
+
+NAICS (North American Industry Classification System) codes are used to classify business types for commercial insurance.
+
+This tool helps you:
+- Find the correct NAICS code for a business based on description
+- Understand what products/coverages are available for specific business types
+- Determine carrier appetite for commercial risks
+
+Use cases:
+- Customer describes their business: "We run a bakery" → Find matching NAICS codes
+- Quote commercial insurance → Get proper risk classification
+- Determine carrier eligibility → Start with correct business classification
+
+Returns:
+- NAICS code (6-digit)
+- Industry title/description
+- Sector information
+- Whether insurers commonly cover this business type`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Business description or keywords to search for matching NAICS codes (e.g., 'bakery', 'plumbing contractor', 'software development')",
+        },
+        naicsCode: {
+          type: "string",
+          description: "Optional: Specific 6-digit NAICS code to decode (if you already have it)",
+        },
+      },
+    },
+  },
+  {
+    name: "askkodiak_getEligibleCarriers",
+    description: `Find eligible insurance carriers/products for a specific business type (NAICS code).
+
+This is the PRIMARY tool for determining which carriers will write coverage for a commercial risk.
+
+Given a NAICS code, returns:
+- List of insurance carriers that write this business class
+- Products available (General Liability, Property, BOP, Workers Comp, etc.)
+- Product IDs for creating quote applications
+- Carrier appetite indicators
+
+Use cases:
+1. After classifying business → Find available carriers
+2. Commercial quote workflow → Identify which carriers to quote
+3. Cross-sell opportunities → See what products each carrier offers
+4. Market research → Understand carrier appetite by business type
+
+WORKFLOW:
+Step 1: Use askkodiak_classifyBusiness to get NAICS code
+Step 2: Use this tool to find eligible carriers and products
+Step 3: Use askkodiak_getApplicationQuestions to build quote applications
+
+IMPORTANT: This replaces manual carrier appetite guides and binding authority lists`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        naicsCode: {
+          type: "string",
+          description: "6-digit NAICS code for the business type (required)",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of products to return (default: 100)",
+        },
+      },
+      required: ["naicsCode"],
+    },
+  },
+  {
+    name: "askkodiak_getCarriers",
+    description: `Get list of all insurance carriers/companies available through AskKodiak.
+
+Returns comprehensive carrier information:
+- Company ID (use for other AskKodiak calls)
+- Company name
+- Contact information
+- Available products
+- Coverage types offered
+- API integration availability
+
+Use cases:
+- Browse all available carriers
+- Search for specific carrier
+- Get carrier ID for product lookups
+- Understand which carriers are available for quoting
+
+Filter options:
+- Search by name
+- Filter by product type
+- Active carriers only`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        searchName: {
+          type: "string",
+          description: "Optional: Search for carriers by name (e.g., 'Progressive', 'Hartford')",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of carriers to return (default: 100)",
+        },
+      },
+    },
+  },
+  {
+    name: "askkodiak_getCarrierProducts",
+    description: `Get all insurance products offered by a specific carrier company.
+
+Given a carrier/company ID, returns all products they offer:
+- Product name and type (General Liability, BOP, Workers Comp, etc.)
+- Product ID (use for application questions)
+- Coverage details
+- Eligible business classes (NAICS codes)
+- Product status (active/inactive)
+
+Use cases:
+- "What does Progressive offer for commercial auto?"
+- "Which carriers offer BOP for restaurants?"
+- Research carrier's full product portfolio
+- Find product ID for specific coverage type
+
+WORKFLOW:
+Step 1: Use askkodiak_getCarriers to find carrier and get Company ID
+Step 2: Use this tool to see all products that carrier offers
+Step 3: Use askkodiak_getApplicationQuestions for specific product`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        companyId: {
+          type: "string",
+          description: "AskKodiak Company ID (get from askkodiak_getCarriers)",
+        },
+      },
+      required: ["companyId"],
+    },
+  },
+  {
+    name: "askkodiak_getApplicationQuestions",
+    description: `Get the application questions for a specific insurance product.
+
+This is the CORE tool for building commercial insurance quote applications.
+
+Given a product ID, returns:
+- All application questions in order
+- Question types (text, number, yes/no, dropdown, etc.)
+- Conditional questions (show/hide based on previous answers)
+- Validation rules
+- Required vs optional fields
+- Helper text and tooltips
+
+Returns a structured questionnaire you can use to:
+1. Build quote intake forms
+2. Collect underwriting information
+3. Submit applications to carriers
+4. Ensure all required data is gathered
+
+WORKFLOW:
+Step 1: Use askkodiak_classifyBusiness → Get NAICS code
+Step 2: Use askkodiak_getEligibleCarriers → Find products
+Step 3: Use this tool → Get application questions for selected product
+Step 4: Collect answers from customer
+Step 5: Submit application to carrier (via carrier's API or manual)
+
+IMPORTANT:
+- Questions are product-specific (General Liability questions ≠ Workers Comp questions)
+- Conditional logic is included (some questions appear based on previous answers)
+- This replaces static ACORD forms with dynamic, carrier-specific questions`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        productId: {
+          type: "string",
+          description: "AskKodiak Product ID (get from askkodiak_getEligibleCarriers or askkodiak_getCarrierProducts)",
+        },
+        answers: {
+          type: "object",
+          description: "Optional: Provide answers to questions to evaluate conditional logic (shows/hides follow-up questions)",
+        },
+      },
+      required: ["productId"],
+    },
+  },
+  {
+    name: "askkodiak_getUnderwritingRules",
+    description: `Get underwriting rules and guidelines for a specific insurance product.
+
+Returns detailed underwriting criteria:
+- Eligibility requirements
+- Declination triggers (auto-declines)
+- Risk appetite guidelines
+- Coverage restrictions
+- Premium modifiers
+- Referral triggers
+- Binding authority limits
+
+Use cases:
+- Pre-screen risks before submitting applications
+- Understand why a risk might be declined
+- Identify referral situations
+- Educate customers on eligibility
+- Improve quote hit ratio
+
+IMPORTANT:
+- Rules are product-specific
+- Some rules are conditional (based on business type, revenue, years in business, etc.)
+- Helps avoid wasted time on ineligible risks
+
+Example: "BOP for restaurant with $2M revenue"
+→ Returns rules showing if that revenue level is acceptable, if liquor liability is required, etc.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        productId: {
+          type: "string",
+          description: "AskKodiak Product ID (get from askkodiak_getEligibleCarriers or askkodiak_getCarrierProducts)",
+        },
+      },
+      required: ["productId"],
+    },
+  },
 ];
 
 // Endpoint mapping for tool execution
@@ -2188,6 +2416,344 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             type: "text",
             text: `Error calling NHTSA Recalls API: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // ========== ASKKODIAK API HANDLERS ==========
+
+  // AskKodiak Business Classification Handler
+  if (toolName === "askkodiak_classifyBusiness") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set. Please add your AskKodiak credentials to use this feature.\n\nTo get credentials, visit your Company Settings in AskKodiak.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+      };
+
+      // If user provided a specific NAICS code, decode it
+      if (args.naicsCode) {
+        const response = await axios.get(
+          `https://api.askkodiak.com/v2/naics/${args.naicsCode}`,
+          { headers }
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(response.data, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Otherwise search for NAICS codes by query
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/naics`,
+        {
+          headers,
+          params: { search: args.query },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // AskKodiak Get Eligible Carriers Handler
+  if (toolName === "askkodiak_getEligibleCarriers") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+      };
+
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/naics/${args.naicsCode}/products`,
+        {
+          headers,
+          params: { limit: args.limit || 100 },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // AskKodiak Get Carriers Handler
+  if (toolName === "askkodiak_getCarriers") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+      };
+
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/companies`,
+        {
+          headers,
+          params: {
+            search: args.searchName,
+            limit: args.limit || 100,
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // AskKodiak Get Carrier Products Handler
+  if (toolName === "askkodiak_getCarrierProducts") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+      };
+
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/companies/${args.companyId}/products`,
+        { headers }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // AskKodiak Get Application Questions Handler
+  if (toolName === "askkodiak_getApplicationQuestions") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+        "Content-Type": "application/json",
+      };
+
+      // If answers provided, use POST to render conditional content
+      if (args.answers) {
+        const response = await axios.post(
+          `https://api.askkodiak.com/v2/products/${args.productId}/render`,
+          { answers: args.answers },
+          { headers }
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(response.data, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Otherwise GET the base questions
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/products/${args.productId}/questions`,
+        { headers }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // AskKodiak Get Underwriting Rules Handler
+  if (toolName === "askkodiak_getUnderwritingRules") {
+    const askkodiakGroupId = process.env.ASKKODIAK_GROUP_ID;
+    const askkodiakApiKey = process.env.ASKKODIAK_API_KEY;
+
+    if (!askkodiakGroupId || !askkodiakApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY environment variables not set.",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const headers = {
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
+      };
+
+      const response = await axios.get(
+        `https://api.askkodiak.com/v2/products/${args.productId}/rules`,
+        { headers }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling AskKodiak API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
           },
         ],
         isError: true,
