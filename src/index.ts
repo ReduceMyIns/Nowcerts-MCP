@@ -20,6 +20,15 @@ interface OAuthToken {
   token_type: string;
 }
 
+// Fenris Token Cache Interface
+interface FenrisTokenCache {
+  access_token: string;
+  expires_at: number; // Unix timestamp (ms)
+}
+
+// Global Fenris token cache
+let fenrisTokenCache: FenrisTokenCache | null = null;
+
 class NowCertsClient {
   private axiosInstance: AxiosInstance;
   private token: OAuthToken | null = null;
@@ -127,6 +136,48 @@ class NowCertsClient {
       }
       throw error;
     }
+  }
+}
+
+// Fenris Token Management Helper
+async function getFenrisAccessToken(clientId: string, clientSecret: string): Promise<string> {
+  // Check if we have a cached token that's still valid
+  const now = Date.now();
+
+  if (fenrisTokenCache && fenrisTokenCache.expires_at > now) {
+    // Token is still valid, return cached token
+    return fenrisTokenCache.access_token;
+  }
+
+  // Token expired or doesn't exist, get a new one
+  try {
+    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const tokenResponse = await axios.post(
+      "https://auth.fenrisd.com/realms/fenris/protocol/openid-connect/token",
+      "grant_type=client_credentials",
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${basicAuth}`,
+        },
+      }
+    );
+
+    const accessToken = tokenResponse.data.access_token;
+    const expiresIn = tokenResponse.data.expires_in || 86400; // Default 24 hours
+
+    // Cache the token with 5-minute buffer before expiration
+    fenrisTokenCache = {
+      access_token: accessToken,
+      expires_at: now + (expiresIn - 300) * 1000, // Subtract 5 minutes
+    };
+
+    return accessToken;
+  } catch (error: any) {
+    // Clear cache on error
+    fenrisTokenCache = null;
+    throw new Error(`Failed to get Fenris access token: ${error.message}`);
   }
 }
 
@@ -1997,24 +2048,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     try {
-      // Step 1: Get Bearer token using OAuth client credentials with Basic Auth
-      // Matches working curl: Authorization header + grant_type in body
-      const basicAuth = Buffer.from(`${fenrisClientId}:${fenrisClientSecret}`).toString('base64');
+      // Get cached or fresh access token (automatically handles renewal)
+      const accessToken = await getFenrisAccessToken(fenrisClientId, fenrisClientSecret);
 
-      const tokenResponse = await axios.post(
-        "https://auth.fenrisd.com/realms/fenris/protocol/openid-connect/token",
-        "grant_type=client_credentials",
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Basic ${basicAuth}`,
-          },
-        }
-      );
-
-      const accessToken = tokenResponse.data.access_token;
-
-      // Step 2: Call Fenris API with Bearer token
+      // Call Fenris API with Bearer token
       const response = await axios.post(
         "https://api.fenrisd.com/services/personal/v1/autoprefill/search",
         {
