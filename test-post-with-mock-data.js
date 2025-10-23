@@ -11,9 +11,15 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 
 const CREDENTIALS = {
-  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME || 'chase@reducemyinsurance.net',
-  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD || 'TempPassword!1',
+  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME,
+  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD,
 };
+
+// Validate required environment variables
+if (!CREDENTIALS.NOWCERTS_USERNAME || !CREDENTIALS.NOWCERTS_PASSWORD) {
+  console.error('Error: NOWCERTS_USERNAME and NOWCERTS_PASSWORD environment variables are required');
+  process.exit(1);
+}
 
 // Mock Fenris data (simulating what Fenris API would return for Kyle Murdock)
 const MOCK_FENRIS_DATA = {

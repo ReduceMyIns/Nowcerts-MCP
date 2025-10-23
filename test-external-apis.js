@@ -8,13 +8,27 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 
 const CREDENTIALS = {
-  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME || 'chase@reducemyinsurance.net',
-  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD || 'TempPassword!1',
-  FENRIS_CLIENT_ID: process.env.FENRIS_CLIENT_ID || 'o787cue0simna6s1gngo80k66',
-  FENRIS_CLIENT_SECRET: process.env.FENRIS_CLIENT_SECRET || '1phsgp5ouin6medi0e3gklq8ekm1gpnm8f97u39cbvlifa7artvh',
-  SMARTY_AUTH_ID: process.env.SMARTY_AUTH_ID || 'e6187c37-3604-48eb-af85-ba6f07542ce0',
-  SMARTY_AUTH_TOKEN: process.env.SMARTY_AUTH_TOKEN || 'x7lUVTxL7Jwye6XJ7A83'
+  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME,
+  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD,
+  FENRIS_CLIENT_ID: process.env.FENRIS_CLIENT_ID,
+  FENRIS_CLIENT_SECRET: process.env.FENRIS_CLIENT_SECRET,
+  SMARTY_AUTH_ID: process.env.SMARTY_AUTH_ID,
+  SMARTY_AUTH_TOKEN: process.env.SMARTY_AUTH_TOKEN
 };
+
+// Validate required environment variables
+if (!CREDENTIALS.NOWCERTS_USERNAME || !CREDENTIALS.NOWCERTS_PASSWORD) {
+  console.error('Error: NOWCERTS_USERNAME and NOWCERTS_PASSWORD environment variables are required');
+  process.exit(1);
+}
+if (!CREDENTIALS.FENRIS_CLIENT_ID || !CREDENTIALS.FENRIS_CLIENT_SECRET) {
+  console.error('Error: FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET environment variables are required');
+  process.exit(1);
+}
+if (!CREDENTIALS.SMARTY_AUTH_ID || !CREDENTIALS.SMARTY_AUTH_TOKEN) {
+  console.error('Error: SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN environment variables are required');
+  process.exit(1);
+}
 
 const LOG_FILE = 'external-api-test-results.md';
 let requestId = 0;
