@@ -3,7 +3,7 @@
     "nowcerts": {
       "command": "node",
       "args": [
-        "/home/user/Nowcerts-MCP/dist/index.js"
+        "C:\\Users\\User\\Nowcerts-MCP\\dist\\index.js"
       ],
       "env": {
         "NOWCERTS_USERNAME": "your-username-here",
