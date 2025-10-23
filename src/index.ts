@@ -2444,8 +2444,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
       };
 
       // If user provided a specific NAICS code, decode it
@@ -2513,8 +2512,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
       };
 
       const response = await axios.get(
@@ -2565,8 +2563,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
       };
 
       const response = await axios.get(
@@ -2620,8 +2617,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
       };
 
       const response = await axios.get(
@@ -2669,8 +2665,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
         "Content-Type": "application/json",
       };
 
@@ -2737,8 +2732,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     try {
       const headers = {
-        "x-groupid": askkodiakGroupId,
-        "x-api-key": askkodiakApiKey,
+        "Authorization": `Basic ${Buffer.from(`${askkodiakGroupId}:${askkodiakApiKey}`).toString('base64')}`,
       };
 
       const response = await axios.get(
