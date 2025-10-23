@@ -269,27 +269,27 @@ Available fields: id (primary key), firstName, lastName, email, phone, cellPhone
     inputSchema: {
       type: "object",
       properties: {
-        $filter: {
+        filter: {
           type: "string",
           description: "OData filter expression (optional). Example: 'active eq true'",
         },
-        $top: {
+        top: {
           type: "number",
           description: "Number of records to return (limit). Example: 100",
         },
-        $skip: {
+        skip: {
           type: "number",
           description: "Number of records to skip (offset). Example: 0 for first page, 100 for second page",
         },
-        $orderby: {
+        orderby: {
           type: "string",
           description: "Field to order by. Default: 'changeDate desc'. Examples: 'firstName asc', 'lastName desc', 'changeDate desc'",
         },
-        $select: {
+        select: {
           type: "string",
           description: "Comma-separated list of columns to return (optional). Example: 'id,firstName,lastName,email,active'",
         },
-        $count: {
+        count: {
           type: "boolean",
           description: "Include total count in response. Set to true to get @odata.count field.",
         },
@@ -331,27 +331,27 @@ Available fields: id (primary key), commercialName, firstName, middleName, lastN
     inputSchema: {
       type: "object",
       properties: {
-        $filter: {
+        filter: {
           type: "string",
           description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        $top: {
+        top: {
           type: "number",
           description: "Number of records to return (limit). Example: 100",
         },
-        $skip: {
+        skip: {
           type: "number",
           description: "Number of records to skip (offset). Example: 0",
         },
-        $orderby: {
+        orderby: {
           type: "string",
           description: "Field to order by. Default: 'changeDate desc'. Example: 'InsuredLastName asc'",
         },
-        $select: {
+        select: {
           type: "string",
           description: "Comma-separated list of columns to return (optional)",
         },
-        $count: {
+        count: {
           type: "boolean",
           description: "Include total count in response. Set to true to get @odata.count field.",
         },
@@ -501,27 +501,27 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
     inputSchema: {
       type: "object",
       properties: {
-        $filter: {
+        filter: {
           type: "string",
           description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        $top: {
+        top: {
           type: "number",
           description: "Number of records to return (limit). Example: 100",
         },
-        $skip: {
+        skip: {
           type: "number",
           description: "Number of records to skip (offset). Example: 0",
         },
-        $orderby: {
+        orderby: {
           type: "string",
           description: "Field to order by. Default: 'changeDate desc'. Examples: 'effectiveDate desc', 'expirationDate asc'",
         },
-        $select: {
+        select: {
           type: "string",
           description: "Comma-separated list of columns to return (optional)",
         },
-        $count: {
+        count: {
           type: "boolean",
           description: "Include total count in response. Set to true to get @odata.count field.",
         },
@@ -716,27 +716,27 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
     inputSchema: {
       type: "object",
       properties: {
-        $filter: {
+        filter: {
           type: "string",
           description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        $top: {
+        top: {
           type: "number",
           description: "Number of records to return (limit). Example: 100",
         },
-        $skip: {
+        skip: {
           type: "number",
           description: "Number of records to skip (offset). Example: 0",
         },
-        $orderby: {
+        orderby: {
           type: "string",
           description: "Field to order by. Default: 'changeDate desc'. Example: 'ClaimDate desc'",
         },
-        $select: {
+        select: {
           type: "string",
           description: "Comma-separated list of columns to return (optional)",
         },
-        $count: {
+        count: {
           type: "boolean",
           description: "Include total count in response. Set to true to get @odata.count field.",
         },
@@ -1260,27 +1260,27 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
     inputSchema: {
       type: "object",
       properties: {
-        $filter: {
+        filter: {
           type: "string",
           description: "OData filter expression (optional). Can be combined with other parameters.",
         },
-        $top: {
+        top: {
           type: "number",
           description: "Number of records to return (limit). Example: 100",
         },
-        $skip: {
+        skip: {
           type: "number",
           description: "Number of records to skip (offset). Example: 0",
         },
-        $orderby: {
+        orderby: {
           type: "string",
           description: "Field to order by. Default: 'changeDate desc'. Example: 'PrincipalName asc'",
         },
-        $select: {
+        select: {
           type: "string",
           description: "Comma-separated list of columns to return (optional)",
         },
-        $count: {
+        count: {
           type: "boolean",
           description: "Include total count in response. Set to true to get @odata.count field.",
         },
@@ -2588,6 +2588,19 @@ Additional API documentation:
   if (!endpoint) {
     throw new Error(`Unknown tool: ${toolName}`);
   }
+
+  // Map parameter names without $ to OData format with $ prefix
+  // This is required because Anthropic's API doesn't allow $ in parameter names
+  const odataParams: Record<string, any> = {};
+  if (args.filter) odataParams.$filter = args.filter;
+  if (args.top !== undefined) odataParams.$top = args.top;
+  if (args.skip !== undefined) odataParams.$skip = args.skip;
+  if (args.orderby) odataParams.$orderby = args.orderby;
+  if (args.select) odataParams.$select = args.select;
+  if (args.count !== undefined) odataParams.$count = args.count;
+
+  // Merge OData params back into args
+  Object.assign(args, odataParams);
 
   // Add default $orderby=changeDate desc for List endpoints if not specified
   const isListEndpoint = endpoint.path.includes('List') && endpoint.method === 'GET';
