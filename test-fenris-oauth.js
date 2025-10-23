@@ -38,16 +38,17 @@ async function testFenris() {
   console.log();
 
   try {
-    // Step 1: Get OAuth token using Basic Auth
-    const basicAuth = Buffer.from(`${FENRIS_CLIENT_ID}:${FENRIS_CLIENT_SECRET}`).toString('base64');
-
+    // Step 1: Get OAuth token using client_secret_post (AWS Cognito method)
     const tokenResponse = await axios.post(
       "https://auth.fenrisd.com/realms/fenris/protocol/openid-connect/token",
-      "grant_type=client_credentials",
+      new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: FENRIS_CLIENT_ID,
+        client_secret: FENRIS_CLIENT_SECRET,
+      }).toString(),
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization": `Basic ${basicAuth}`,
         },
       }
     );
