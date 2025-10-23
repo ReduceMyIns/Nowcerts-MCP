@@ -415,7 +415,6 @@ Example for individual insured:
         insured: {
           type: "object",
           description: "Insured data to insert. Fields will be passed directly to the API.",
-          required: true,
         },
       },
       required: ["insured"],
@@ -430,7 +429,6 @@ Example for individual insured:
         insured: {
           type: "object",
           description: "Insured data",
-          required: true,
         },
       },
       required: ["insured"],
@@ -445,7 +443,6 @@ Example for individual insured:
         data: {
           type: "object",
           description: "Insured and policies data",
-          required: true,
         },
       },
       required: ["data"],
@@ -460,7 +457,6 @@ Example for individual insured:
         insured: {
           type: "object",
           description: "Insured data with custom fields",
-          required: true,
         },
       },
       required: ["insured"],
@@ -567,7 +563,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         policy: {
           type: "object",
           description: "Policy data to insert",
-          required: true,
         },
       },
       required: ["policy"],
@@ -597,7 +592,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         quote: {
           type: "object",
           description: "Quote data",
-          required: true,
         },
       },
       required: ["quote"],
@@ -627,7 +621,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         prospect: {
           type: "object",
           description: "Prospect data",
-          required: true,
         },
       },
       required: ["prospect"],
@@ -642,7 +635,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         prospect: {
           type: "object",
           description: "Prospect data with custom fields",
-          required: true,
         },
       },
       required: ["prospect"],
@@ -657,7 +649,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         xml_data: {
           type: "string",
           description: "XML data to push",
-          required: true,
         },
       },
       required: ["xml_data"],
@@ -672,7 +663,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         data: {
           type: "object",
           description: "Quote request and prospect data",
-          required: true,
         },
       },
       required: ["data"],
@@ -687,7 +677,6 @@ Available fields: id (primary key), number, isQuote, effectiveDate, expirationDa
         data: {
           type: "object",
           description: "Quote request data",
-          required: true,
         },
       },
       required: ["data"],
@@ -773,7 +762,6 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         claim: {
           type: "object",
           description: "Claim data",
-          required: true,
         },
       },
       required: ["claim"],
@@ -800,7 +788,6 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         note: {
           type: "object",
           description: "Note data",
-          required: true,
         },
       },
       required: ["note"],
@@ -827,7 +814,6 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         tag: {
           type: "object",
           description: "Tag data",
-          required: true,
         },
       },
       required: ["tag"],
@@ -876,7 +862,6 @@ ID FIELD NAMING:
         driver: {
           type: "object",
           description: "Driver data including policyDatabaseId (required)",
-          required: true,
         },
       },
       required: ["driver"],
@@ -896,7 +881,6 @@ ID FIELD NAMING:
           type: "array",
           items: { type: "object" },
           description: "Array of driver data, each with policyDatabaseId",
-          required: true,
         },
       },
       required: ["drivers"],
@@ -947,7 +931,6 @@ ID FIELD NAMING:
         vehicle: {
           type: "object",
           description: "Vehicle data including policyDatabaseId (required)",
-          required: true,
         },
       },
       required: ["vehicle"],
@@ -967,7 +950,6 @@ ID FIELD NAMING:
           type: "array",
           items: { type: "object" },
           description: "Array of vehicle data, each with policyDatabaseId",
-          required: true,
         },
       },
       required: ["vehicles"],
@@ -994,7 +976,6 @@ ID FIELD NAMING:
         task: {
           type: "object",
           description: "Task data",
-          required: true,
         },
       },
       required: ["task"],
@@ -1021,7 +1002,6 @@ ID FIELD NAMING:
         opportunity: {
           type: "object",
           description: "Opportunity data",
-          required: true,
         },
       },
       required: ["opportunity"],
@@ -1098,7 +1078,6 @@ ID FIELD NAMING:
         data: {
           type: "object",
           description: "Service request data",
-          required: true,
         },
       },
       required: ["data"],
@@ -1112,7 +1091,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1126,7 +1104,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1140,7 +1117,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1154,7 +1130,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1168,7 +1143,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1211,7 +1185,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1237,7 +1210,6 @@ ID FIELD NAMING:
       properties: {
         sms: {
           type: "object",
-          required: true,
         },
       },
       required: ["sms"],
@@ -1251,7 +1223,6 @@ ID FIELD NAMING:
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1334,7 +1305,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         principal: {
           type: "object",
-          required: true,
         },
       },
       required: ["principal"],
@@ -1360,7 +1330,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         property: {
           type: "object",
-          required: true,
         },
       },
       required: ["property"],
@@ -1374,7 +1343,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         property: {
           type: "object",
-          required: true,
         },
       },
       required: ["property"],
@@ -1400,7 +1368,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         record: {
           type: "object",
-          required: true,
         },
       },
       required: ["record"],
@@ -1416,7 +1383,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1442,7 +1408,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1456,7 +1421,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1473,12 +1437,10 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
         target_url: {
           type: "string",
           description: "Webhook URL",
-          required: true,
         },
         event: {
           type: "string",
           description: "Event type to subscribe to",
-          required: true,
         },
       },
       required: ["target_url", "event"],
@@ -1492,11 +1454,9 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         target_url: {
           type: "string",
-          required: true,
         },
         event: {
           type: "string",
-          required: true,
         },
       },
       required: ["target_url", "event"],
@@ -1512,7 +1472,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1526,7 +1485,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1540,7 +1498,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
@@ -1554,7 +1511,6 @@ Available fields: databaseId (primary key), firstName, middleName, lastName, des
       properties: {
         data: {
           type: "object",
-          required: true,
         },
       },
       required: ["data"],
