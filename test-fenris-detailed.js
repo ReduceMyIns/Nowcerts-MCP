@@ -8,11 +8,21 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 
 const CREDENTIALS = {
-  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME || 'chase@reducemyinsurance.net',
-  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD || 'TempPassword!1',
-  FENRIS_CLIENT_ID: process.env.FENRIS_CLIENT_ID || 'o787cue0simna6s1gngo80k66',
-  FENRIS_CLIENT_SECRET: process.env.FENRIS_CLIENT_SECRET || '1phsgp5ouin6medi0e3gklq8ekm1gpnm8f97u39cbvlifa7artvh',
+  NOWCERTS_USERNAME: process.env.NOWCERTS_USERNAME,
+  NOWCERTS_PASSWORD: process.env.NOWCERTS_PASSWORD,
+  FENRIS_CLIENT_ID: process.env.FENRIS_CLIENT_ID,
+  FENRIS_CLIENT_SECRET: process.env.FENRIS_CLIENT_SECRET,
 };
+
+// Validate required environment variables
+if (!CREDENTIALS.NOWCERTS_USERNAME || !CREDENTIALS.NOWCERTS_PASSWORD) {
+  console.error('Error: NOWCERTS_USERNAME and NOWCERTS_PASSWORD environment variables are required');
+  process.exit(1);
+}
+if (!CREDENTIALS.FENRIS_CLIENT_ID || !CREDENTIALS.FENRIS_CLIENT_SECRET) {
+  console.error('Error: FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET environment variables are required');
+  process.exit(1);
+}
 
 let requestId = 0;
 

@@ -7,8 +7,13 @@
 
 import axios from 'axios';
 
-const FENRIS_CLIENT_ID = process.env.FENRIS_CLIENT_ID || 'o787cue0simna6s1gngo80k66';
-const FENRIS_CLIENT_SECRET = process.env.FENRIS_CLIENT_SECRET || '1phsgp5ouin6medi0e3gklq8ekm1gpnm8f97u39cbvlifa7artvh';
+const FENRIS_CLIENT_ID = process.env.FENRIS_CLIENT_ID;
+const FENRIS_CLIENT_SECRET = process.env.FENRIS_CLIENT_SECRET;
+
+if (!FENRIS_CLIENT_ID || !FENRIS_CLIENT_SECRET) {
+  console.error('Error: FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET environment variables are required');
+  process.exit(1);
+}
 
 const TEST_DATA = {
   responseType: "C",
