@@ -1,5 +1,5 @@
 # External API Integration Test Results
-Generated: 2025-10-23T16:41:19.233Z
+Generated: 2025-10-23T17:20:42.507Z
 
 ## APIs Tested
 1. **Fenris Auto Insurance Prefill API** - Household data prefill
@@ -18,8 +18,8 @@ Generated: 2025-10-23T16:41:19.233Z
 
 | # | API Tool | Status | Response Time | Error Details | Notes |
 |---|----------|--------|---------------|---------------|-------|
-| 1 | fenris_prefillHousehold | ✅ SUCCESS | 35ms | - | API returned data (134 chars) |
-| 2 | smarty_verifyAddress | ✅ SUCCESS | 11ms | - | API returned data (134 chars) |
+| 1 | fenris_prefillHousehold | ✅ SUCCESS | 30ms | - | API returned data (152 chars) |
+| 2 | smarty_verifyAddress | ✅ SUCCESS | 12ms | - | API returned data (134 chars) |
 | 3 | nhtsa_decodeVin | ✅ SUCCESS | 5ms | - | API returned data (126 chars) |
 | 4 | nhtsa_checkRecalls | ✅ SUCCESS | 5ms | - | API returned data (122 chars) |
 
