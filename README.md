@@ -1,5 +1,9 @@
 # NowCerts MCP Server
 
+<a href="https://glama.ai/mcp/servers/@ReduceMyIns/Nowcerts">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@ReduceMyIns/Nowcerts/badge" />
+</a>
+
 A comprehensive Model Context Protocol (MCP) server that provides AI assistants with access to all NowCerts API endpoints.
 
 ## Overview
