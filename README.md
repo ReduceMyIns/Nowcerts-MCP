@@ -4,13 +4,15 @@ A comprehensive Model Context Protocol (MCP) server that provides AI assistants 
 
 ## Overview
 
-This MCP server exposes 96+ NowCerts API endpoints as tools that can be used by AI assistants like Claude. It handles OAuth 2.0 authentication automatically and provides a seamless interface to the NowCerts insurance management platform.
+This MCP server exposes 100+ NowCerts API endpoints plus external insurance data APIs as tools that can be used by AI assistants like Claude. It handles OAuth 2.0 authentication automatically and provides a seamless interface to the NowCerts insurance management platform, along with integrations for Fenris household data, Smarty address validation, and NHTSA vehicle information.
 
 ## Features
 
-- **Complete API Coverage**: All 96+ NowCerts endpoints exposed as MCP tools
+- **Complete API Coverage**: All 100+ NowCerts endpoints exposed as MCP tools
 - **Automatic Authentication**: OAuth 2.0 password grant flow with automatic token refresh
 - **25+ Entity Types**: Agents, Insureds, Policies, Claims, Prospects, Drivers, Vehicles, and more
+- **External API Integrations**: Fenris household data, Smarty address validation, NHTSA vehicle data
+- **Smart Token Caching**: Fenris OAuth tokens cached and auto-renewed (70% faster)
 - **Type-Safe**: Built with TypeScript for reliability
 - **Easy Integration**: Works with Claude Desktop and other MCP clients
 
@@ -20,13 +22,13 @@ This MCP server exposes 96+ NowCerts API endpoints as tools that can be used by 
 
 - Node.js 20 or higher
 - NowCerts API credentials (username and password)
+- **Optional**: Fenris API credentials for household data prefill
+- **Optional**: Smarty credentials for address validation
+- **Optional**: NHTSA tools work without credentials (public API)
 
 ### Setup
 
-1. Navigate to the mcp-server directory:
-```bash
-cd mcp-server
-```
+1. Clone or download this repository
 
 2. Install dependencies:
 ```bash
@@ -42,12 +44,28 @@ npm run build
 
 ### Environment Variables
 
-Set your NowCerts credentials as environment variables:
+#### Required for Basic Functionality
 
 ```bash
 export NOWCERTS_USERNAME="your-username"
 export NOWCERTS_PASSWORD="your-password"
 ```
+
+#### Required for External API Integrations
+
+For Fenris household data prefill functionality:
+```bash
+export FENRIS_CLIENT_ID="your-fenris-client-id"
+export FENRIS_CLIENT_SECRET="your-fenris-client-secret"
+```
+
+For Smarty address verification:
+```bash
+export SMARTY_AUTH_ID="your-smarty-auth-id"
+export SMARTY_AUTH_TOKEN="your-smarty-auth-token"
+```
+
+**Note**: External API credentials are optional. The server will work without them, but tools like `fenris_prefillHousehold` and `smarty_verifyAddress` will return errors if credentials are not provided.
 
 ### Claude Desktop Configuration
 
@@ -61,10 +79,14 @@ Add the server to your Claude Desktop configuration file:
   "mcpServers": {
     "nowcerts": {
       "command": "node",
-      "args": ["/absolute/path/to/NowCerts-PHP-SDK/mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/Nowcerts-MCP/dist/index.js"],
       "env": {
         "NOWCERTS_USERNAME": "your-username",
-        "NOWCERTS_PASSWORD": "your-password"
+        "NOWCERTS_PASSWORD": "your-password",
+        "FENRIS_CLIENT_ID": "your-fenris-client-id",
+        "FENRIS_CLIENT_SECRET": "your-fenris-client-secret",
+        "SMARTY_AUTH_ID": "your-smarty-auth-id",
+        "SMARTY_AUTH_TOKEN": "your-smarty-auth-token"
       }
     }
   }
@@ -193,6 +215,43 @@ The server provides 96+ tools organized by category:
 - `nowcerts_nationwide_callbackUrl` - Nationwide callback
 - `nowcerts_agencyRevolution_activities` - Agency Revolution activities
 
+### External API Integrations (6 tools)
+
+#### Fenris Household Data (2 tools)
+Prefill household and vehicle data from Fenris database. **Requires FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET**.
+
+- `fenris_prefillHousehold` - Get household data including vehicles, drivers, and insurance info
+- `fenris_search` - Search Fenris database by various criteria
+
+**Features**:
+- OAuth 2.0 authentication with automatic token caching (70% faster after first call)
+- Complete household data: name, address, drivers, vehicles, current insurance
+- Token automatically renews before expiration
+
+#### Smarty Address Validation (1 tool)
+Validate and standardize US addresses. **Requires SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN**.
+
+- `smarty_verifyAddress` - Validate address and get standardized components
+
+**Features**:
+- USPS-validated addresses
+- Delivery point validation
+- ZIP+4 code lookup
+- Address standardization
+
+#### NHTSA Vehicle Data (3 tools)
+Query NHTSA database for vehicle specifications and recalls. **No credentials required** (public API).
+
+- `nhtsa_decodeVin` - Decode VIN to get vehicle specifications
+- `nhtsa_getRecallsByVin` - Get safety recalls for specific VIN
+- `nhtsa_getRecallsByMake` - Get recalls by make, model, and year
+
+**Features**:
+- Complete vehicle specifications from VIN
+- Safety recall information
+- Make, model, and year details
+- No authentication required
+
 ## Usage Examples
 
 Once configured in Claude Desktop, you can use natural language to interact with NowCerts:
@@ -268,15 +327,15 @@ The server provides detailed error messages including:
 
 ## API Coverage
 
-This server provides complete coverage of the NowCerts API including:
+This server provides complete coverage of the NowCerts API plus external integrations:
 
-- 96+ endpoint methods
-- 25+ entity types
-- Full CRUD operations
-- Search and filtering
-- Pagination support
-- Custom field handling
-- Third-party integrations
+- **100+ NowCerts endpoints**: Full coverage of insurance management platform
+- **6 External API tools**: Fenris household data, Smarty validation, NHTSA vehicle data
+- **25+ entity types**: Agents, Insureds, Policies, Claims, Prospects, Drivers, Vehicles, etc.
+- **Full CRUD operations**: Create, Read, Update, Delete across all entity types
+- **Advanced features**: Search, filtering, pagination, custom fields
+- **Third-party integrations**: Cognito, CloudIt, Nationwide, Agency Revolution
+- **Smart caching**: OAuth token caching for 70% faster external API calls
 
 ## License
 
