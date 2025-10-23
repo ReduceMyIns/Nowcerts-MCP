@@ -205,13 +205,16 @@ Common $filter examples:
 - Search by first name: "contains(firstName, 'John')"
 - Search by last name: "contains(lastName, 'Smith')"
 - Search by email: "contains(email, 'agent@example.com')"
+- By role: "primaryRole eq 'Agent/Producer'" or "primaryRole eq 'CSR'"
+- Default agent: "isDefaultAgent eq true"
+- Has user account: "userId ne null"
 - Multiple conditions: "active eq true and contains(lastName, 'Smith')"
 
 Pagination examples:
-- First 100 active agents: $filter=active eq true&$top=100&$skip=0&$orderby=firstName asc
-- Next 100: $filter=active eq true&$top=100&$skip=100&$orderby=firstName asc
+- First 100 active agents: $filter=active eq true&$top=100&$skip=0&$orderby=firstName asc&$count=true
+- Next 100: $filter=active eq true&$top=100&$skip=100&$orderby=firstName asc&$count=true
 
-Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active, primaryRole, npnNumber, isDefaultAgent, userId, userDisplayName, changeDate, etc.`,
+Available fields: id (primary key), firstName, lastName, email, phone, cellPhone, fax, npnNumber, primaryRole, assignCommissionIfCSR, isDefaultAgent, useAgentIfNotDefault, primaryOfficeName, active, changeDate, userId, userDisplayName, addressLine1, addressLine2, city, state, county, zipCode, isSuperVisior, agentIs, workGroups (list)`,
     inputSchema: {
       type: "object",
       properties: {
@@ -246,31 +249,34 @@ Available fields: id, firstName, lastName, email, phone, cellPhone, fax, active,
   // ========== INSURED ENDPOINTS ==========
   {
     name: "nowcerts_insured_getList",
-    description: `Retrieve insureds from NowCerts using OData query parameters.
+    description: `Retrieve insureds/prospects from NowCerts using OData query parameters.
 
 IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
 ID FIELD NAMING:
-- On Insured object itself: Use "ID" (the primary UUID)
+- On Insured object itself: Use "id" (the primary UUID)
 - On related objects (policies, etc.): Use "insuredDatabaseId" to link to insureds
 - In Zapier endpoints: Use "insured_database_id"
-This UUID is the primary key to link policies, claims, and other objects back to the insured/prospect.
 
 Common $filter examples:
-- Search by ID: "ID eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
-- Search by name: "contains(InsuredFirstName, 'John') or contains(InsuredLastName, 'Smith')"
-- Search by email: "contains(InsuredEmail, 'test@example.com')"
-- Search by phone (format as ###-###-####): "contains(InsuredPhoneNumber, '555-123-4567')"
-- Search by city/state: "InsuredCity eq 'Nashville' and InsuredState eq 'TN'"
-- Commercial insureds: "InsuredType eq 'Commercial'"
+- Search by ID: "id eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
+- Search by name: "contains(firstName, 'John') or contains(lastName, 'Smith')"
+- Search by commercial name: "contains(commercialName, 'ACME')"
+- Search by email: "contains(eMail, 'test@example.com')"
+- Search by phone (format ###-###-####): "contains(phone, '555-123-4567') or contains(cellPhone, '555-123-4567')"
+- Search by city/state: "city eq 'Nashville' and state eq 'TN'"
+- Active insureds: "active eq true"
+- By type: "type eq 'Insured'" or "type eq 'Prospect'"
+- Personal/Commercial: "insuredType eq 'Personal'" or "insuredType eq 'Commercial'"
+- Date range: "changeDate ge 2024-01-01T00:00:00Z and changeDate le 2024-12-31T00:00:00Z"
 
 Pagination examples:
-- First 100 with filter: $filter=InsuredType eq 'Personal'&$top=100&$skip=0&$orderby=InsuredLastName asc
-- Combine all params: $filter=contains(InsuredEmail, 'gmail')&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+- First 100 personal: $filter=insuredType eq 'Personal'&$top=100&$skip=0&$orderby=lastName asc&$count=true
+- Combine params: $filter=contains(eMail, 'gmail') and active eq true&$top=50&$skip=0&$orderby=changeDate desc&$count=true
 
 PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
 
-Available fields: ID, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPhoneNumber, InsuredCellPhone, InsuredCity, InsuredState, InsuredZipCode, InsuredType, changeDate, etc.`,
+Available fields: id (primary key), commercialName, firstName, middleName, lastName, dateOfBirth, type, dba, addressLine1, addressLine2, state, city, zipCode, eMail, eMail2, eMail3, fax, phone, cellPhone, smsPhone, description, active, website, fein, customerId, insuredId, referralSourceCompanyName, changeDate, createDate, coInsured_FirstName, coInsured_MiddleName, coInsured_LastName, coInsured_DateOfBirth, insuredType, prospectType, acquisitionDate`,
     inputSchema: {
       type: "object",
       properties: {
@@ -383,33 +389,33 @@ Available fields: ID, InsuredFirstName, InsuredLastName, InsuredEmail, InsuredPh
 IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
 ID FIELD NAMING:
-- Policy's own ID: "databaseId" (the policy's UUID)
+- Policy's own ID: "id" (the policy's primary UUID key)
 - Link to insured: "insuredDatabaseId" (UUID linking to the insured/prospect)
 - When linking other objects (vehicles, drivers) to this policy: Use "policyDatabaseId"
-These UUIDs are used to relate policies to insureds and to link related objects like vehicles, drivers, etc.
 
 Common $filter examples:
-- Search by policy ID: "databaseId eq '1a847475-baf3-4ff6-b0ee-f26c3fa88720'"
+- Search by policy ID: "id eq '1a847475-baf3-4ff6-b0ee-f26c3fa88720'"
 - Search by insured ID: "insuredDatabaseId eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
-- Search by insured phone (format as ###-###-####): "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredCellPhone, '555-123-4567') or contains(insuredSMSPhone, '555-123-4567'))"
+- Search by policy number: "contains(number, 'POL123456')" or "number eq 'ABC-123-456'"
+- Search by insured name: "contains(insuredFirstName, 'John') or contains(insuredLastName, 'Smith')"
 - Search by insured email: "contains(insuredEmail, 'test@example.com')"
-- Search by policy number: "contains(number, 'POL123456')"
+- Search by commercial name: "contains(insuredCommercialName, 'ACME')"
 - Active policies only: "active eq true"
-- Policies by status: "status eq 'Active'" or "status eq 'Expired'" or "status eq 'Renewed'"
+- By status: "status eq 'Active'" or "status eq 'Expired'" or "status eq 'Cancelled'"
 - Quotes only: "isQuote eq true"
+- Policies only (not quotes): "isQuote eq false"
 - By carrier: "contains(carrierName, 'PROGRESSIVE')"
+- By business type: "businessType eq 'Renewal'" or "businessType eq 'New_Business'"
+- By billing type: "billingType eq 'Direct_Bill_100'"
 - By date range: "effectiveDate ge 2024-01-01T00:00:00Z and effectiveDate le 2024-12-31T00:00:00Z"
 - Expiring soon: "expirationDate le 2025-12-31T00:00:00Z and active eq true"
-- By insured type: "insuredType eq 'Personal'" or "insuredType eq 'Commercial'"
-- Complex search: "(contains(insuredPhoneNumber, '555-123-4567') or contains(insuredEmail, 'test@example.com')) and active eq true"
-
-PHONE FORMAT: Always use ###-###-#### format (e.g., '555-123-4567', NOT '5551234567')
+- Premium range: "totalPremium ge 1000 and totalPremium le 5000"
 
 Pagination examples:
-- Active policies only: $filter=active eq true&$top=100&$skip=0&$orderby=effectiveDate desc
-- Combine filter + pagination: $filter=status eq 'Active'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+- Active policies: $filter=active eq true&$top=100&$skip=0&$orderby=effectiveDate desc&$count=true
+- Expiring this year: $filter=expirationDate ge 2025-01-01T00:00:00Z and expirationDate le 2025-12-31T00:00:00Z&$top=50&$skip=0&$orderby=expirationDate asc&$count=true
 
-Available fields: databaseId, insuredDatabaseId, number, isQuote, effectiveDate, expirationDate, businessType, insuredEmail, insuredFirstName, insuredLastName, insuredPhoneNumber, carrierName, totalPremium, active, status, insuredType, changeDate, etc.`,
+Available fields: id (primary key), number, isQuote, effectiveDate, expirationDate, bindDate, businessType, businessSubType, description, billingType, insuredDatabaseId, insuredEmail, insuredFirstName, insuredLastName, insuredCommercialName, carrierName, carrierNAIC, mgaName, totalPremium, totalNonPremium, totalAgencyCommission, changeDate, cancellationDate, reinstatementDate, active, status, inceptionDate, createDate, policyTerm`,
     inputSchema: {
       type: "object",
       properties: {
@@ -609,20 +615,29 @@ Available fields: databaseId, insuredDatabaseId, number, isQuote, effectiveDate,
 
 IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
+ID FIELD NAMING:
+- Claim's own ID: "databaseId" (the claim's primary UUID)
+- Link to insured: "insuredDatabaseId" (UUID of the insured/prospect)
+
 Common $filter examples:
-- Search by claim number: "contains(ClaimNumber, '12345')"
-- Search by policy number: "contains(PolicyNumber, 'MT949221291')"
-- By status: "ClaimStatus eq 'Open'" or "ClaimStatus eq 'Closed'"
-- By date range: "ClaimDate ge 2024-01-01T00:00:00Z and ClaimDate le 2024-12-31T00:00:00Z"
-- By insured name: "contains(InsuredName, 'Henderson')"
-- Recent claims: "ClaimDate ge 2024-01-01T00:00:00Z"
-- Open claims only: "ClaimStatus eq 'Open'"
+- Search by claim ID: "databaseId eq '7c8b37f8-e4d0-42f9-a7d0-ffefd163f657'"
+- Search by claim number: "contains(claimNumber, '12345')" or "claimNumber eq '789456'"
+- Search by policy number: "contains(policyNumber, 'POL123')"
+- By status: "status eq 'Open'" or "status eq 'Closed'" or "status eq 'Submitted_To_Carrier'"
+- Search by insured ID: "insuredDatabaseId eq 'ed37f103-ca80-e6da-fa7a-abdfc4b8a7b3'"
+- Search by insured name: "contains(insuredFirstName, 'John') or contains(insuredLastName, 'Smith')"
+- Search by insured email: "contains(insuredEmail, 'test@example.com')"
+- Search by commercial name: "contains(insuredCommercialName, 'ACME')"
+- By loss date range: "dateOfLossAndTime ge 2024-01-01T00:00:00Z and dateOfLossAndTime le 2024-12-31T00:00:00Z"
+- By city/state: "city eq 'Nashville' and state eq 'TN'"
+- Open claims: "status eq 'Open'"
+- Recent claims: "changeDate ge 2024-01-01T00:00:00Z"
 
 Pagination examples:
-- Open claims: $filter=ClaimStatus eq 'Open'&$top=100&$skip=0&$orderby=ClaimDate desc
-- Combine params: $filter=ClaimStatus eq 'Open'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+- Open claims: $filter=status eq 'Open'&$top=100&$skip=0&$orderby=dateOfLossAndTime desc&$count=true
+- By insured: $filter=insuredDatabaseId eq 'guid-here'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
 
-Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, InsuredName, ClaimAmount, changeDate, etc.`,
+Available fields: databaseId (primary key), claimNumber, status, street, city, state, zipCode, county, dateOfLossAndTime, describeLocation, policeOrFireDepartment, reportNumber, additionalComments, descriptionOfLossAndDamage, insuredDatabaseId, insuredEmail, insuredFirstName, insuredLastName, insuredCommercialName, policyNumber, changeDate, createDate, dateAndAmount (list)`,
     inputSchema: {
       type: "object",
       properties: {
@@ -736,12 +751,22 @@ Available fields: ClaimId, ClaimNumber, PolicyNumber, ClaimDate, ClaimStatus, In
   // ========== DRIVER ENDPOINTS ==========
   {
     name: "nowcerts_driver_getDrivers",
-    description: `Get drivers via Zapier endpoint. Drivers are linked to policies.
+    description: `Get drivers via Zapier endpoint. Drivers are linked to policies and insureds.
 
 ID FIELD NAMING:
-- Driver's own ID: "databaseId" (UUID)
-- Link to policy: "policyDatabaseId" (UUID of the policy this driver belongs to)
-- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
+- Driver's own ID: "id" (primary UUID key)
+- Link to policy: "policyIds" (list of policy UUIDs)
+- Link to insured: "insuredDatabaseId" (insured's UUID)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"
+
+Filter examples:
+- By policy: Filter by policyIds containing specific policy UUID
+- By insured: Filter by insuredDatabaseId
+- Active drivers: Filter by active eq true
+- Excluded drivers: Filter by excluded eq true
+- By license state: Filter by licenseState
+
+Available fields: id (primary key), firstName, middleName, lastName, dateOfBirth, ssn, excluded, licenseNumber, licenseState, licenseYear, hireDate, terminationDate, policyNumbers (list), insuredDatabaseId, insuredEmail, insuredFirstName, insuredLastName, insuredCommercialName, policyIds (list), active, maritalStatus, gender`,
     inputSchema: {
       type: "object",
       properties: {
@@ -795,12 +820,24 @@ ID FIELD NAMING:
   // ========== VEHICLE ENDPOINTS ==========
   {
     name: "nowcerts_vehicle_getVehicles",
-    description: `Get vehicles via Zapier endpoint. Vehicles are linked to policies.
+    description: `Get vehicles via Zapier endpoint. Vehicles are linked to policies and insureds.
 
 ID FIELD NAMING:
-- Vehicle's own ID: "databaseId" (UUID)
-- Link to policy: "policyDatabaseId" (UUID of the policy this vehicle belongs to)
-- In Zapier endpoints: Use "database_id" and "policy_database_id"`,
+- Vehicle's own ID: "id" (primary UUID key)
+- Link to policy: "policyIds" (list of policy UUIDs)
+- Link to insured: "insuredDatabaseId" (insured's UUID)
+- In Zapier endpoints: Use "database_id" and "policy_database_id"
+
+Filter examples:
+- By VIN: Filter by vin field
+- By policy: Filter by policyIds containing specific policy UUID
+- By insured: Filter by insuredDatabaseId
+- By type: Filter by type (e.g., 'Truck', 'Car', 'SUV')
+- By year: Filter by year
+- Active vehicles: Filter by active eq true
+- By make/model: Filter by make or model fields
+
+Available fields: id (primary key), type, year, make, model, vin, description, typeOfUse, typeOfUseAsFlag, value, deductibleComprehensive, deductibleCollision, visible, policyNumbers (list), insuredDatabaseId, insuredEmail, insuredFirstName, insuredLastName, insuredCommercialName, policyIds (list), active, policyLevelCoverages (list), lienHolders (list)`,
     inputSchema: {
       type: "object",
       properties: {
@@ -1138,22 +1175,31 @@ ID FIELD NAMING:
   // ========== PRINCIPAL ENDPOINTS ==========
   {
     name: "nowcerts_principal_getList",
-    description: `Get principals (additional insureds/interested parties) from NowCerts using OData query parameters.
+    description: `Get principals/contacts (additional insureds/interested parties) from NowCerts using OData query parameters.
 
 IMPORTANT: By default, results are ordered by 'changeDate desc' (most recently changed first).
 
+ID FIELD NAMING:
+- Principal's own ID: "databaseId" (primary UUID key)
+- Link to insured: "insuredDatabaseId" (insured's UUID)
+
 Common $filter examples:
-- Search by name: "contains(PrincipalName, 'Smith')"
-- Search by email: "contains(Email, 'principal@example.com')"
-- By type: "PrincipalType eq 'Additional Insured'" or "PrincipalType eq 'Loss Payee'"
-- Active principals: "Active eq true"
-- By policy: "PolicyId eq 'guid-here'"
+- Search by ID: "databaseId eq '7c8b37f8-e4d0-42f9-a7d0-ffefd163f657'"
+- Search by first name: "contains(firstName, 'John')"
+- Search by last name: "contains(lastName, 'Smith')"
+- Search by personal email: "contains(personalEmail, 'test@example.com')"
+- Search by business email: "contains(businessEmail, 'business@example.com')"
+- By type: "type eq 'Owner'" or "type eq 'Spouse'" or "type eq 'Other'"
+- By insured ID: "insuredDatabaseId eq 'guid-here'"
+- By insured name: "contains(insuredFirstName, 'John') or contains(insuredLastName, 'Smith')"
+- Recent changes: "changeDate ge 2024-01-01T00:00:00Z"
+- By gender: "gender eq 'Male'" or "gender eq 'Female'"
 
 Pagination examples:
-- Active principals: $filter=Active eq true&$top=100&$skip=0&$orderby=PrincipalName asc
-- Combine params: $filter=Active eq true&$top=50&$skip=0&$orderby=changeDate desc&$count=true
+- All contacts for insured: $filter=insuredDatabaseId eq 'guid-here'&$top=100&$skip=0&$orderby=lastName asc&$count=true
+- Owners only: $filter=type eq 'Owner'&$top=50&$skip=0&$orderby=changeDate desc&$count=true
 
-Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, PolicyId, Active, changeDate, etc.`,
+Available fields: databaseId (primary key), firstName, middleName, lastName, description, type, personalEmail, businessEmail, homePhone, officePhone, cellPhone, personalFax, businessFax, ssn, birthday, insuredDatabaseId, insuredEmail, insuredFirstName, insuredLastName, insuredCommercialName, changeDate, dlNumber, dlYear, dlStateName, education, gender, industryName, isHealthPlanMember`,
     inputSchema: {
       type: "object",
       properties: {
@@ -1426,6 +1472,195 @@ Available fields: PrincipalId, PrincipalName, Email, Phone, PrincipalType, Polic
         },
       },
       required: ["data"],
+    },
+  },
+
+  // ========== EXTERNAL API INTEGRATIONS ==========
+  {
+    name: "fenris_prefillHousehold",
+    description: `Prefill household data using the Fenris Auto Insurance Prefill API.
+
+This API provides comprehensive household information including:
+- Household members (names, ages, relationships)
+- Vehicles owned (VIN, year, make, model)
+- Property details (year built, square footage, construction type)
+- Prior insurance information
+
+Use this BEFORE creating insureds/policies to save data entry time and improve accuracy.
+
+Common use cases:
+- New quote - auto-populate customer data
+- Annual review - verify household composition
+- Renewal - check for household changes
+
+Returns structured data that can be directly used with NowCerts insert endpoints.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        firstName: {
+          type: "string",
+          description: "Primary insured first name (required)",
+        },
+        lastName: {
+          type: "string",
+          description: "Primary insured last name (required)",
+        },
+        address: {
+          type: "string",
+          description: "Street address (required)",
+        },
+        city: {
+          type: "string",
+          description: "City (required)",
+        },
+        state: {
+          type: "string",
+          description: "State abbreviation (e.g., 'TN') (required)",
+        },
+        zip: {
+          type: "string",
+          description: "5-digit ZIP code (required)",
+        },
+        dateOfBirth: {
+          type: "string",
+          description: "Date of birth in YYYY-MM-DD format (optional)",
+        },
+      },
+      required: ["firstName", "lastName", "address", "city", "state", "zip"],
+    },
+  },
+  {
+    name: "smarty_verifyAddress",
+    description: `Verify and standardize addresses using the Smarty Address Verification API.
+
+This API validates addresses against USPS data and returns:
+- Standardized address format (proper casing, abbreviations)
+- Address components (street, city, state, ZIP+4)
+- Delivery point validation
+- County information
+- Congressional district
+- Latitude/Longitude coordinates
+- Property metadata
+
+Use this to:
+- Validate addresses before creating insured records
+- Standardize addresses for consistency
+- Ensure accurate mailing addresses
+- Get geocoding data for properties
+
+IMPORTANT: Always use the standardized address returned by this API in your NowCerts records.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        street: {
+          type: "string",
+          description: "Street address line (required)",
+        },
+        street2: {
+          type: "string",
+          description: "Apartment, suite, unit number (optional)",
+        },
+        city: {
+          type: "string",
+          description: "City name (optional if providing ZIP)",
+        },
+        state: {
+          type: "string",
+          description: "State abbreviation (e.g., 'TN') (optional if providing ZIP)",
+        },
+        zipcode: {
+          type: "string",
+          description: "5 or 9-digit ZIP code (optional if providing city/state)",
+        },
+      },
+      required: ["street"],
+    },
+  },
+  {
+    name: "nhtsa_decodeVin",
+    description: `Decode VIN using the NHTSA Vehicle API to get comprehensive vehicle information.
+
+This API returns detailed vehicle specifications including:
+- Year, Make, Model, Trim
+- Body Type (Sedan, SUV, Truck, etc.)
+- Engine specifications (type, displacement, cylinders)
+- Transmission type
+- Drive type (FWD, RWD, AWD, 4WD)
+- Manufacturer details
+- Plant information
+- Safety ratings
+- GVWR (Gross Vehicle Weight Rating)
+- Vehicle type classification
+
+Use this to:
+- Auto-populate vehicle fields when customer provides VIN
+- Verify vehicle information for accuracy
+- Get standard vehicle specifications
+- Determine proper insurance classification
+
+IMPORTANT: VIN must be exactly 17 characters.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        vin: {
+          type: "string",
+          description: "17-character Vehicle Identification Number (required)",
+        },
+        modelYear: {
+          type: "number",
+          description: "Model year (optional, helps with accuracy)",
+        },
+      },
+      required: ["vin"],
+    },
+  },
+  {
+    name: "nhtsa_checkRecalls",
+    description: `Check for open safety recalls on a vehicle using the NHTSA Recalls API.
+
+This API searches the NHTSA database for any open safety recalls on the specified vehicle.
+
+Returns for each recall:
+- Recall campaign number
+- Recall date
+- Component description
+- Summary of the defect
+- Consequence of the defect
+- Corrective action/remedy
+- Manufacturer's recall number
+- Whether the recall is safety-related
+
+Use this to:
+- Inform customers of open recalls when quoting
+- Check recalls during annual review
+- Verify recalls during claim investigation
+- Due diligence before binding policies
+
+IMPORTANT:
+- Always inform customers of open recalls
+- Document in notes if recalls are found
+- Some states require disclosure of recall information`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        vin: {
+          type: "string",
+          description: "17-character Vehicle Identification Number (required)",
+        },
+        modelYear: {
+          type: "number",
+          description: "Model year (optional but recommended)",
+        },
+        make: {
+          type: "string",
+          description: "Vehicle make (optional, improves search)",
+        },
+        model: {
+          type: "string",
+          description: "Vehicle model (optional, improves search)",
+        },
+      },
+      required: ["vin"],
     },
   },
 ];
@@ -1701,6 +1936,204 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const toolName = request.params.name;
   const args = request.params.arguments || {};
+
+  // ========== EXTERNAL API HANDLERS ==========
+
+  // Fenris Prefill API Handler
+  if (toolName === "fenris_prefillHousehold") {
+    // Note: Requires FENRIS_API_KEY environment variable
+    const fenrisApiKey = process.env.FENRIS_API_KEY;
+    if (!fenrisApiKey) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: FENRIS_API_KEY environment variable not set. Please add your Fenris API key to use this feature.\n\nTo get an API key, visit: https://fenrisdata.com",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const response = await axios.post(
+        "https://api.fenrisdata.com/v1/prefill",
+        {
+          first_name: args.firstName,
+          last_name: args.lastName,
+          address: args.address,
+          city: args.city,
+          state: args.state,
+          zip: args.zip,
+          date_of_birth: args.dateOfBirth,
+        },
+        {
+          headers: {
+            "Authorization": `Bearer ${fenrisApiKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling Fenris API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // Smarty Address Verification Handler
+  if (toolName === "smarty_verifyAddress") {
+    const smartyAuthId = process.env.SMARTY_AUTH_ID;
+    const smartyAuthToken = process.env.SMARTY_AUTH_TOKEN;
+
+    if (!smartyAuthId || !smartyAuthToken) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "Error: SMARTY_AUTH_ID and SMARTY_AUTH_TOKEN environment variables not set.\n\nTo get credentials, visit: https://www.smarty.com/pricing",
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    try {
+      const response = await axios.get(
+        "https://us-street.api.smarty.com/street-address",
+        {
+          params: {
+            "auth-id": smartyAuthId,
+            "auth-token": smartyAuthToken,
+            street: args.street,
+            street2: args.street2,
+            city: args.city,
+            state: args.state,
+            zipcode: args.zipcode,
+          },
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling Smarty API: ${error.message}\n${error.response?.data ? JSON.stringify(error.response.data, null, 2) : ""}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // NHTSA VIN Decoder Handler (Free, no API key needed)
+  if (toolName === "nhtsa_decodeVin") {
+    try {
+      const vin = (args as any).vin;
+      if (!vin || vin.length !== 17) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Error: VIN must be exactly 17 characters",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const modelYear = (args as any).modelYear ? `/${(args as any).modelYear}` : "";
+      const response = await axios.get(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}${modelYear}?format=json`
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling NHTSA VIN Decoder API: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // NHTSA Recalls Check Handler (Free, no API key needed)
+  if (toolName === "nhtsa_checkRecalls") {
+    try {
+      const vin = (args as any).vin;
+      if (!vin || vin.length !== 17) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Error: VIN must be exactly 17 characters",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const response = await axios.get(
+        `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${(args as any).make || ""}&model=${(args as any).model || ""}&modelYear=${(args as any).modelYear || ""}&vin=${vin}`
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response.data, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error calling NHTSA Recalls API: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  }
+
+  // ========== NOWCERTS API HANDLERS ==========
 
   // Special handler for lookup tables documentation
   if (toolName === "nowcerts_schema_getLookupTables") {
