@@ -215,7 +215,7 @@ The server provides 96+ tools organized by category:
 - `nowcerts_nationwide_callbackUrl` - Nationwide callback
 - `nowcerts_agencyRevolution_activities` - Agency Revolution activities
 
-### External API Integrations (5 tools)
+### External API Integrations (11 tools)
 
 #### Fenris Household Data (1 tool)
 Prefill household and vehicle data from Fenris database. **Requires FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET**.
@@ -250,6 +250,37 @@ Query NHTSA database for vehicle specifications and recalls. **No credentials re
 - Safety recall information
 - Make, model, and year details
 - No authentication required
+
+#### AskKodiak Commercial Insurance (6 tools)
+Commercial insurance risk classification and carrier eligibility. **Requires ASKKODIAK_GROUP_ID and ASKKODIAK_API_KEY**.
+
+- `askkodiak_classifyBusiness` - Search for NAICS codes by business description or decode specific NAICS code
+- `askkodiak_getEligibleCarriers` - Find insurance carriers/products for a business type (NAICS code)
+- `askkodiak_getCarriers` - Get list of all available insurance carriers/companies
+- `askkodiak_getCarrierProducts` - Get all products offered by a specific carrier
+- `askkodiak_getApplicationQuestions` - Get application questions for a specific insurance product
+- `askkodiak_getUnderwritingRules` - Get underwriting rules and guidelines for a product
+
+**Features**:
+- NAICS code classification for commercial risks
+- Carrier appetite and eligibility determination
+- Dynamic quote application questions (replaces static ACORD forms)
+- Underwriting rules and guidelines
+- Automated carrier selection based on business type
+- Supports General Liability, BOP, Workers Comp, and all commercial lines
+
+**Typical Workflow**:
+1. Use `askkodiak_classifyBusiness` to get NAICS code from business description (e.g., "bakery" → NAICS 311811)
+2. Use `askkodiak_getEligibleCarriers` to find which carriers write that business class
+3. Use `askkodiak_getApplicationQuestions` to get product-specific application questions
+4. Use `askkodiak_getUnderwritingRules` to pre-screen the risk before submission
+5. Collect answers from customer and submit to carrier
+
+**Benefits**:
+- Replaces manual carrier appetite guides with real-time eligibility data
+- Ensures correct business classification for accurate quoting
+- Reduces application errors with structured, dynamic questionnaires
+- Improves quote hit ratio by pre-screening risks against underwriting rules
 
 ## Usage Examples
 
