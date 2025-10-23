@@ -2309,14 +2309,14 @@ Integer values required:
 - 6 = Other
 
 Example usage in Insured/Insert:
-```json
+\`\`\`json
 {
   "Type": 0,
   "FirstName": "John",
   "LastName": "Doe",
   ...
 }
-```
+\`\`\`
 
 ### InsuredType
 **IMPORTANT**: This field specifies the business classification (Commercial vs Personal).
@@ -2328,13 +2328,13 @@ Required integer values:
 - 4 = Medicare
 
 Example usage:
-```json
+\`\`\`json
 {
   "InsuredType": 0,  // Commercial
   "Type": 0,         // Insured (not Prospect)
   ...
 }
-```
+\`\`\`
 
 ### AddressType
 - Home
@@ -2574,9 +2574,9 @@ Additional API documentation:
   if (toolName === 'nowcerts_insured_insert' ||
       toolName === 'nowcerts_insured_insertNoOverride' ||
       toolName === 'nowcerts_insured_insertWithCustomFields') {
-    requestData = args.insured || args;
+    requestData = (args.insured as Record<string, unknown>) || args;
   } else if (toolName === 'nowcerts_insured_insuredAndPoliciesInsert') {
-    requestData = args.data || args;
+    requestData = (args.data as Record<string, unknown>) || args;
   }
 
   try {
