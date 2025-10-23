@@ -1997,18 +1997,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     try {
-      // Step 1: Get Bearer token using OAuth client credentials (AWS Cognito)
-      // Try client_secret_post method (credentials in body instead of header)
+      // Step 1: Get Bearer token using OAuth client credentials with Basic Auth
+      // Matches working curl: Authorization header + grant_type in body
+      const basicAuth = Buffer.from(`${fenrisClientId}:${fenrisClientSecret}`).toString('base64');
+
       const tokenResponse = await axios.post(
         "https://auth.fenrisd.com/realms/fenris/protocol/openid-connect/token",
-        new URLSearchParams({
-          grant_type: "client_credentials",
-          client_id: fenrisClientId,
-          client_secret: fenrisClientSecret,
-        }).toString(),
+        "grant_type=client_credentials",
         {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Basic ${basicAuth}`,
           },
         }
       );
