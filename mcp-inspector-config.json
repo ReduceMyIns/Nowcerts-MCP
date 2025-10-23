@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "nowcerts": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\User\\Nowcerts-MCP\\dist\\index.js"
+      ],
+      "env": {
+        "NOWCERTS_USERNAME": "your-username-here",
+        "NOWCERTS_PASSWORD": "your-password-here"
+      }
+    }
+  }
+}
