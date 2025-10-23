@@ -1536,6 +1536,10 @@ Returns structured data that can be directly used with NowCerts insert endpoints
           type: "string",
           description: "Primary insured first name (required)",
         },
+        middleName: {
+          type: "string",
+          description: "Primary insured middle name (optional)",
+        },
         lastName: {
           type: "string",
           description: "Primary insured last name (required)",
@@ -1550,7 +1554,7 @@ Returns structured data that can be directly used with NowCerts insert endpoints
         },
         state: {
           type: "string",
-          description: "State abbreviation (e.g., 'TN') (required)",
+          description: "State abbreviation (e.g., 'DE', 'TN') (required)",
         },
         zip: {
           type: "string",
@@ -1558,7 +1562,7 @@ Returns structured data that can be directly used with NowCerts insert endpoints
         },
         dateOfBirth: {
           type: "string",
-          description: "Date of birth in YYYY-MM-DD format (optional)",
+          description: "Date of birth in MM/DD/YYYY format (optional but recommended)",
         },
       },
       required: ["firstName", "lastName", "address", "city", "state", "zip"],
@@ -1976,14 +1980,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   // Fenris Prefill API Handler
   if (toolName === "fenris_prefillHousehold") {
-    // Note: Requires FENRIS_API_KEY environment variable
-    const fenrisApiKey = process.env.FENRIS_API_KEY;
-    if (!fenrisApiKey) {
+    // Note: Requires FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET environment variables
+    const fenrisClientId = process.env.FENRIS_CLIENT_ID;
+    const fenrisClientSecret = process.env.FENRIS_CLIENT_SECRET;
+
+    if (!fenrisClientId || !fenrisClientSecret) {
       return {
         content: [
           {
             type: "text",
-            text: "Error: FENRIS_API_KEY environment variable not set. Please add your Fenris API key to use this feature.\n\nTo get an API key, visit: https://fenrisdata.com",
+            text: "Error: FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET environment variables not set. Please add your Fenris credentials to use this feature.\n\nTo get credentials, visit: https://fenrisdata.com",
           },
         ],
         isError: true,
@@ -1991,21 +1997,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     try {
-      const response = await axios.post(
-        "https://api.fenrisdata.com/v1/prefill",
+      // Step 1: Get Bearer token using OAuth client credentials
+      const tokenResponse = await axios.post(
+        "https://auth.fenrisd.com/realms/fenris/protocol/openid-connect/token",
+        new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: fenrisClientId,
+          client_secret: fenrisClientSecret,
+          scope: "bitfrost/post"
+        }),
         {
-          first_name: args.firstName,
-          last_name: args.lastName,
-          address: args.address,
-          city: args.city,
-          state: args.state,
-          zip: args.zip,
-          date_of_birth: args.dateOfBirth,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const accessToken = tokenResponse.data.access_token;
+
+      // Step 2: Call Fenris API with Bearer token
+      const response = await axios.post(
+        "https://api.fenrisd.com/services/personal/v1/autoprefill/search",
+        {
+          responseType: "C",
+          person: {
+            firstName: args.firstName,
+            middleName: args.middleName || "",
+            lastName: args.lastName,
+            dateOfBirth: args.dateOfBirth, // Format: MM/DD/YYYY
+          },
+          address: {
+            addressLine1: args.address,
+            addressLine2: "",
+            city: args.city,
+            state: args.state,
+            zipCode: args.zip,
+          },
         },
         {
           headers: {
-            "Authorization": `Bearer ${fenrisApiKey}`,
+            "Authorization": `Bearer ${accessToken}`,
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "products": "Personal",
+            "Request-Id": `mcp-${Date.now()}`,
           },
         }
       );
