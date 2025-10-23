@@ -316,10 +316,10 @@ Result: Complete prospect created with all household data!```
 **Input Format**:
 ```json
 {
-  "street": "1500 Medical Center Pkwy",
-  "city": "Murfreesboro",
+  "street": "123 Main Street",
+  "city": "Anytown",
   "state": "TN",
-  "zipCode": "37129"
+  "zipCode": "37000"
 }
 ```
 
@@ -482,8 +482,8 @@ When possible, validate data:
 ### Use Case 1: New Customer Onboarding
 
 ```
-User: "I have a new customer: Sarah Johnson, DOB 03/15/1985, 
-       1500 Medical Center Pkwy, Murfreesboro, TN 37129. 
+User: "I have a new customer: Sarah Johnson, DOB 03/15/1985,
+       123 Main Street, Anytown, TN 37000.
        Get her info and set her up in the system."
 
 Assistant Actions:
@@ -491,10 +491,10 @@ Assistant Actions:
    - firstName: "Sarah"
    - lastName: "Johnson"
    - dateOfBirth: "03/15/1985"
-   - address: "1500 Medical Center Pkwy"
-   - city: "Murfreesboro"
+   - address: "123 Main Street"
+   - city: "Anytown"
    - state: "TN"
-   - zip: "37129"
+   - zip: "37000"
 
 2. Call smarty_verifyAddress
    - Verify address is correct

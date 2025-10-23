@@ -215,13 +215,12 @@ The server provides 96+ tools organized by category:
 - `nowcerts_nationwide_callbackUrl` - Nationwide callback
 - `nowcerts_agencyRevolution_activities` - Agency Revolution activities
 
-### External API Integrations (6 tools)
+### External API Integrations (5 tools)
 
-#### Fenris Household Data (2 tools)
+#### Fenris Household Data (1 tool)
 Prefill household and vehicle data from Fenris database. **Requires FENRIS_CLIENT_ID and FENRIS_CLIENT_SECRET**.
 
 - `fenris_prefillHousehold` - Get household data including vehicles, drivers, and insurance info
-- `fenris_search` - Search Fenris database by various criteria
 
 **Features**:
 - OAuth 2.0 authentication with automatic token caching (70% faster after first call)
