@@ -322,13 +322,48 @@ Available fields: id (primary key), commercialName, firstName, middleName, lastN
   },
   {
     name: "nowcerts_insured_insert",
-    description: "Insert a new insured record",
+    description: `Insert a new insured/prospect record. This endpoint saves insured or prospect records.
+
+IMPORTANT Field Requirements:
+- At least ONE of these must be provided to identify the record:
+  * databaseId (to update existing record)
+  * commercialName (for businesses)
+  * firstName AND lastName (for individuals)
+
+- Type (REQUIRED integer): Determines contact type
+  * 0 = Insured
+  * 1 = Prospect
+  * 2 = Underwriter (MGA)
+  * 3 = NAIC (Carrier)
+  * 4 = Finance_Company
+  * 5 = Referral_Source
+  * 6 = Other
+
+- InsuredType (REQUIRED integer): Business classification
+  * 0 = Commercial
+  * 1 = Personal
+  * 2 = LifeHealth_Group
+  * 3 = LifeHealth_Individual
+  * 4 = Medicare
+
+- Active (REQUIRED boolean): true or false
+
+Example for individual insured:
+{
+  "FirstName": "John",
+  "LastName": "Doe",
+  "Type": 0,
+  "InsuredType": 1,
+  "Active": true,
+  "Email": "john@example.com",
+  "Phone": "555-1234"
+}`,
     inputSchema: {
       type: "object",
       properties: {
         insured: {
           type: "object",
-          description: "Insured data to insert",
+          description: "Insured data to insert. Fields will be passed directly to the API.",
           required: true,
         },
       },
@@ -2260,9 +2295,46 @@ Many fields in the NowCerts API require specific enumeration values from lookup 
 - Paid
 - Denied
 
+### Type (for Insured/Prospect objects)
+**IMPORTANT**: This field determines whether a contact is an Insured, Prospect, Carrier, etc.
+Required for endpoints like Insured/Insert, Prospect/Insert, and similar operations.
+
+Integer values required:
+- 0 = Insured
+- 1 = Prospect
+- 2 = Underwriter (MGA)
+- 3 = NAIC (Carrier)
+- 4 = Finance_Company
+- 5 = Referral_Source
+- 6 = Other
+
+Example usage in Insured/Insert:
+```json
+{
+  "Type": 0,
+  "FirstName": "John",
+  "LastName": "Doe",
+  ...
+}
+```
+
 ### InsuredType
-- Personal
-- Commercial
+**IMPORTANT**: This field specifies the business classification (Commercial vs Personal).
+Required integer values:
+- 0 = Commercial
+- 1 = Personal
+- 2 = LifeHealth_Group (Life-Health Group)
+- 3 = LifeHealth_Individual (Life-Health Individual)
+- 4 = Medicare
+
+Example usage:
+```json
+{
+  "InsuredType": 0,  // Commercial
+  "Type": 0,         // Insured (not Prospect)
+  ...
+}
+```
 
 ### AddressType
 - Home
@@ -2496,8 +2568,19 @@ Additional API documentation:
     args.$orderby = 'changeDate desc';
   }
 
+  // Special handling for insert endpoints that wrap data in a nested object
+  // The API expects fields at root level, not wrapped in insured/data/etc objects
+  let requestData = args;
+  if (toolName === 'nowcerts_insured_insert' ||
+      toolName === 'nowcerts_insured_insertNoOverride' ||
+      toolName === 'nowcerts_insured_insertWithCustomFields') {
+    requestData = args.insured || args;
+  } else if (toolName === 'nowcerts_insured_insuredAndPoliciesInsert') {
+    requestData = args.data || args;
+  }
+
   try {
-    const result = await client.request(endpoint.method, endpoint.path, args);
+    const result = await client.request(endpoint.method, endpoint.path, requestData);
     return {
       content: [
         {

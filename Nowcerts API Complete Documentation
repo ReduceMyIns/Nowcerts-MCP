@@ -10015,7 +10015,7 @@ Sample Response
                 "databaseId": "f72368e6-9fa7-41a6-8bdc-3222a2933f60",
                 "name": "TEST - IDFS file.pdf",
                 "path": null,
-                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f72368e6-9fa7-41a6-8bdc-3222a2933f60?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22TEST%20-%20IDFS%20file.pdf%22&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T113435Z&X-Amz-SignedHeaders=host&X-Amz-Signature=342d88ceba1c6ee28b69c6de629302e7fa964834189c13edec063cd900847bdf",
+                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f72368e6-9fa7-41a6-8bdc-3222a2933f60?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22TEST%20-%20IDFS%20file.pdf%22&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T113435Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
                 "downloadUrlExpiresAtUtc": "2023-10-29T12:34:35.5870468Z",
                 "type": 0,
                 "mime": "application/pdf",
@@ -10030,7 +10030,7 @@ Sample Response
                 "databaseId": "598b293b-dc79-41d0-bb05-ef06234a1b96",
                 "name": "TEST - IDFS file.pdf",
                 "path": null,
-                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/598b293b-dc79-41d0-bb05-ef06234a1b96?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22TEST%20-%20IDFS%20file.pdf%22&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T113435Z&X-Amz-SignedHeaders=host&X-Amz-Signature=f869c8604d775a9b095d1d5ff2d3efdac821f9ee30b0317a22f5b3727d76e88b",
+                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/598b293b-dc79-41d0-bb05-ef06234a1b96?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22TEST%20-%20IDFS%20file.pdf%22&response-content-type=application%2Fpdf&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T113435Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
                 "downloadUrlExpiresAtUtc": "2023-10-29T12:34:35.5870468Z",
                 "type": 0,
                 "mime": "application/pdf",
@@ -10098,7 +10098,7 @@ Sample Response
 {
     "status": 1,
     "data": {
-        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f72368e6-9fa7-41a6-8bdc-3222a2933f60?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T120156Z&X-Amz-SignedHeaders=host&X-Amz-Signature=cca284e5f949ecd90e360b8709170691ef7de3ac2e10cce3abd78e9746eb89bb",
+        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f72368e6-9fa7-41a6-8bdc-3222a2933f60?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T120156Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
         "downloadUrlExpiresAtUtc": "2023-10-29T13:01:56.2290984Z"
     },
     "message": null
@@ -10237,7 +10237,7 @@ Sample Response
                 "databaseId": "a453f627-4203-4efd-834d-876353e9fcf8",
                 "name": "APIMETRICS.png",
                 "path": null,
-                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/a453f627-4203-4efd-834d-876353e9fcf8?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22APIMETRICS.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T121824Z&X-Amz-SignedHeaders=host&X-Amz-Signature=a369d9e3e6bda8807e02f2a02c901c534eb2e12b90a2d4afdf03a2ee7c1124af",
+                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/a453f627-4203-4efd-834d-876353e9fcf8?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22APIMETRICS.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T121824Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
                 "downloadUrlExpiresAtUtc": "2023-10-29T13:18:24.7049303Z",
                 "type": 0,
                 "mime": "image/png",
@@ -10542,7 +10542,7 @@ Sample Response
                 "databaseId": "f8c96454-7ca0-4444-ac93-d03394de15d2",
                 "name": "thumbnail_image.png",
                 "path": null,
-                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f8c96454-7ca0-4444-ac93-d03394de15d2?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22thumbnail_image.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T125931Z&X-Amz-SignedHeaders=host&X-Amz-Signature=37f79519406187cdfc3d2173d550a57d9f3b9836cc1ffc6ebddc6fd6415cf4af",
+                "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/f8c96454-7ca0-4444-ac93-d03394de15d2?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22thumbnail_image.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231029/us-east-2/s3/aws4_request&X-Amz-Date=20231029T125931Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
                 "downloadUrlExpiresAtUtc": "2023-10-29T13:59:31.853692Z",
                 "type": 0,
                 "mime": "image/png",
@@ -10931,10 +10931,10 @@ Field Name
 	This property will show the insured last name.
 	dba
 	O
-	This property shows the insured name of the company other than the name of the owner of the company. 
+	This property shows the insured name of the company other than the name of the owner of the company.
 	type
 	R
-	This property shows insured type.See TruckingCompanyType Table for more detail.
+	This property shows insured type (Insured, Prospect, Carrier, etc.). Required integer values: 0=Insured, 1=Prospect, 2=Underwriter(MGA), 3=NAIC(Carrier), 4=Finance_Company, 5=Referral_Source, 6=Other. See TruckingCompanyType Table (section 165.05) for complete details.
 	addressLine1
 	O
 	This property shows insured street line 1 address.
@@ -10992,7 +10992,7 @@ Field Name
 Please place any relevant information you may find helpful. Examples include internal billing number, USDOT number, contractor License number, etc.
 	insuredType
 	R
-	This property shows insured type.See TruckingCompanyInsuredType Table for more detail.
+	This property shows insured business classification (Commercial vs Personal). Required integer values: 0=Commercial, 1=Personal, 2=LifeHealth_Group, 3=LifeHealth_Individual, 4=Medicare. See TruckingCompanyInsuredType Table (section 165.04) for complete details.
 	customFieldsSimple
 	O
 	This property inserts/updates insured custom fields based on text and value property.
@@ -11295,7 +11295,7 @@ Field Name
 	This property will show the property primary key in the nowcerts system.Pass this id to connect a driver to a particular policy.Make sure this policy database id will have insured(insured_database_id) as parent.
 	insuredType
 	R
-	This property shows insured type.See TruckingCompanyInsuredType Table for more detail.
+	This property shows insured business classification (Commercial vs Personal). Required integer values: 0=Commercial, 1=Personal, 2=LifeHealth_Group, 3=LifeHealth_Individual, 4=Medicare. See TruckingCompanyInsuredType Table (section 165.04) for complete details.
 	customFieldsSimple
 	O
 	This property inserts/updates insured custom fields based on text and value property.
@@ -18975,7 +18975,7 @@ Sample Response
         "databaseId": "5b0d7655-5284-4051-a3e8-9f422da4d465",
         "name": "image_2023_09_11T10_58_19_347Z.png",
         "path": null,
-        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/5b0d7655-5284-4051-a3e8-9f422da4d465?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231104/us-east-2/s3/aws4_request&X-Amz-Date=20231104T065204Z&X-Amz-SignedHeaders=host&X-Amz-Signature=1962f50b9edf89bb82f6be63854209bdf56d1d0595ff9e4fb0298565e6e385a8",
+        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/5b0d7655-5284-4051-a3e8-9f422da4d465?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231104/us-east-2/s3/aws4_request&X-Amz-Date=20231104T065204Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
         "downloadUrlExpiresAtUtc": "2023-11-04T07:52:04.9090973Z",
         "type": 0,
         "mime": "image/png",
@@ -19069,7 +19069,7 @@ Sample Response
         "databaseId": "8328b8e1-c707-417b-a078-e27a1091e02e",
         "name": "image_2023_06_20T14_23_06_660Z.png",
         "path": null,
-        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/8328b8e1-c707-417b-a078-e27a1091e02e?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q7T7XM5NMH/20231104/us-east-2/s3/aws4_request&X-Amz-Date=20231104T071000Z&X-Amz-SignedHeaders=host&X-Amz-Signature=ac0faeca160b02d3bc58cd2130c278fe5c579c767d616a27456375aa12c0bf4c",
+        "downloadUrl": "https://agencies-custom-files.s3.us-east-2.amazonaws.com/8328b8e1-c707-417b-a078-e27a1091e02e?X-Amz-Expires=3600&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAXXXXXXXXXXXXXXXX/20231104/us-east-2/s3/aws4_request&X-Amz-Date=20231104T071000Z&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED",
         "downloadUrlExpiresAtUtc": "2023-11-04T08:10:00.748527Z",
         "type": 0,
         "mime": "image/png",
@@ -24269,7 +24269,7 @@ Sample Response
                 "databaseId": "a6c9a93d-2458-4633-adff-d3ab88ce35bf",
                 "name": "image_2024_07_30T16_33_29_628Z.png",
                 "path": null,
-                "downloadUrl": "https://test-agencies-custom-files.s3.us-east-2.amazonaws.com/a6c9a93d-2458-4633-adff-d3ab88ce35bf?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22image_2024_07_30T16_33_29_628Z.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q743HHYRUO/20240821/us-east-2/s3/aws4_request&X-Amz-Date=20240821T162259Z&X-Amz-SignedHeaders=host&X-Amz-Signature=96cff7a936e2dbd274a5a9e7e429600fa4669b4b3b976b0c639d82681a31b48b",
+                "downloadUrl": "[REDACTED - Pre-signed S3 URL]",
                 "downloadUrlExpiresAtUtc": "2024-08-21T17:22:59.8424079Z",
                 "type": 0,
                 "mime": "image/png",
@@ -24391,7 +24391,7 @@ Sample Response
         "databaseId": "5e9c1b67-f0fb-437e-8916-ee0348ede6a3",
         "name": "image.png",
         "path": null,
-        "downloadUrl": "https://test-agencies-custom-files.s3.us-east-2.amazonaws.com/5e9c1b67-f0fb-437e-8916-ee0348ede6a3?X-Amz-Expires=3600&response-content-disposition=attachment%3B%20filename%3D%22image.png%22&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ27YA3Q743HHYRUO/20240820/us-east-2/s3/aws4_request&X-Amz-Date=20240820T144227Z&X-Amz-SignedHeaders=host&X-Amz-Signature=fbfbb03f677dbadbdfe749dfe01605df822c365ffbf1788c2a684577aa1a1679",
+        "downloadUrl": "[REDACTED - Pre-signed S3 URL]",
         "downloadUrlExpiresAtUtc": "2024-08-20T15:42:27.8659991Z",
         "type": 0,
         "mime": "image/png",
