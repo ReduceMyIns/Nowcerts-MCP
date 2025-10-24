@@ -1,16 +1,21 @@
-# Update MCP Server with SSE Support for Claude Desktop
+# Update MCP Server - Universal Version (VAPI + Claude Desktop + n8n)
 
-## What Changed
+## What Changed - v3.0
 
-The updated `http-wrapper.cjs` now includes **MCP SSE (Server-Sent Events) transport**, which enables Claude Desktop/web/mobile to connect via the "Add Custom Connector" feature.
+The updated `http-wrapper.cjs` now includes **EVERYTHING**:
 
-**New endpoints:**
-- `GET /sse` - MCP Server-Sent Events endpoint (for Claude Desktop)
+**VAPI Dynamic Function Discovery (NEW!):**
+- `GET /vapi/functions` - Discover ALL 76+ tools automatically (OpenAI format)
+- `POST /vapi/call` - Universal endpoint for calling ANY tool
+- No need to manually configure each function in VAPI!
+
+**Claude Desktop Integration:**
+- `GET /sse` - MCP Server-Sent Events endpoint (for "Add Custom Connector")
 - `POST /message` - Receive messages from Claude client
 
-**Existing REST API endpoints (for VAPI) unchanged:**
+**Standard REST API (n8n, etc):**
 - `GET /health` - Health check
-- `GET /tools` - List all tools
+- `GET /tools` - List all tools (MCP format)
 - `POST /call-tool` - Call a specific tool
 - `GET /info` - Server info
 
@@ -29,11 +34,11 @@ docker compose down
 cp http-wrapper.cjs http-wrapper.cjs.backup
 
 # 4. Download the updated wrapper
-# (You'll need to paste the new content - see below)
+# (You'll need to paste the new content from http-wrapper-vapi.cjs)
 nano http-wrapper.cjs
 ```
 
-When nano opens, **select all** (Ctrl+A), **delete** the old content, then **paste** the complete new code from `http-wrapper-with-sse.cjs` (I'll provide it below).
+When nano opens, **select all** (Ctrl+A), **delete** the old content, then **paste** the complete new code from `http-wrapper-vapi.cjs` (v3.0 - includes VAPI dynamic discovery + Claude Desktop SSE + standard REST API).
 
 ```bash
 # 5. Save and exit nano
@@ -124,8 +129,25 @@ docker compose up -d
 
 ## Support
 
-Both transport methods work simultaneously:
+All transport methods work simultaneously:
+- **VAPI dynamic functions** via `/vapi/functions` and `/vapi/call` endpoints
 - **SSE transport** (Claude Desktop) via `/sse` endpoint
-- **REST API** (VAPI, n8n, etc.) via `/tools` and `/call-tool` endpoints
+- **REST API** (n8n, etc.) via `/tools` and `/call-tool` endpoints
 
 The server maintains separate MCP processes for each connection type.
+
+## VAPI Integration
+
+After deploying the updated wrapper, see **VAPI-INTEGRATION.md** for complete setup instructions.
+
+**Quick start:**
+1. Test function discovery:
+   ```bash
+   curl https://mcp.srv992249.hstgr.cloud/vapi/functions
+   ```
+
+2. Configure VAPI to use:
+   - Discovery URL: `https://mcp.srv992249.hstgr.cloud/vapi/functions`
+   - Call URL: `https://mcp.srv992249.hstgr.cloud/vapi/call`
+
+3. Done! VAPI now has access to all 76+ tools without manual configuration.
