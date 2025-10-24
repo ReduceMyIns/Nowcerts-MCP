@@ -21,10 +21,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nowcerts-mcp.rule=Host(`mcp.srv992249.hstgr.cloud`)"
-      - "traefik.http.routers.nowcerts-mcp.entrypoints=websecure"
+      - "traefik.http.routers.nowcerts-mcp.entrypoints=web,websecure"
       - "traefik.http.routers.nowcerts-mcp.tls=true"
       - "traefik.http.routers.nowcerts-mcp.tls.certresolver=mytlschallenge"
       - "traefik.http.services.nowcerts-mcp.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
       # For nginx-proxy (uncomment if using nginx-proxy instead of Traefik)
       # - "VIRTUAL_HOST=mcp.srv992249.hstgr.cloud"
       # - "VIRTUAL_PORT=3000"
