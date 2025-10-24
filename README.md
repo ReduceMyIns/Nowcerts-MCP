@@ -1,10 +1,34 @@
 # NowCerts MCP Server
 
-A comprehensive Model Context Protocol (MCP) server that provides AI assistants with access to all NowCerts API endpoints.
+A comprehensive Model Context Protocol (MCP) server that provides AI assistants with access to all NowCerts API endpoints plus integrations with AskKodiak, SmartyStreets, and more.
+
+[![Add to Glama](https://glama.ai/badge.svg)](https://glama.ai/mcp/servers/lkg6c1uizy)
+
+## 🚀 Production Deployment
+
+**For production deployment with SSE support (VAPI, Claude Desktop, n8n):**
+
+See **[PRODUCTION-SETUP.md](./PRODUCTION-SETUP.md)** for:
+- SSE endpoint configuration (universal MCP standard)
+- VAPI integration with built-in MCP tool
+- Claude Desktop custom connector setup
+- n8n MCP nodes configuration
+- Security best practices (API key authentication)
+- Hostinger VPS deployment guide
+
+---
 
 ## Overview
 
-This MCP server exposes 96+ NowCerts API endpoints as tools that can be used by AI assistants like Claude. It handles OAuth 2.0 authentication automatically and provides a seamless interface to the NowCerts insurance management platform.
+This MCP server exposes 76+ tools across multiple integrations:
+- **NowCerts API**: 50+ insurance management endpoints
+- **AskKodiak API**: 6 commercial risk classification tools
+- **SmartyStreets**: Address validation and autocomplete
+- **Fenris**: Additional integrations (optional)
+
+It handles OAuth 2.0 authentication automatically and provides both:
+- **SSE transport** (primary) - For VAPI, Claude Desktop, n8n MCP nodes
+- **REST API** (fallback) - For OpenAI and simple webhooks
 
 ## Features
 
