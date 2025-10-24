@@ -26,6 +26,7 @@
     "axios": "^1.7.2"
   },
   "devDependencies": {
+    "@types/express": "^5.0.4",
     "@types/node": "^20.0.0",
     "ask-kodiak-sdk": "^3.0.1",
     "typescript": "^5.3.0"

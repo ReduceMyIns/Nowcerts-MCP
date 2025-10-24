@@ -69,6 +69,10 @@ export SMARTY_AUTH_TOKEN="your-smarty-auth-token"
 
 ### Claude Desktop Configuration
 
+The server supports two modes of operation:
+
+#### Option 1: Local Mode (Default - Stdio Transport)
+
 Add the server to your Claude Desktop configuration file:
 
 **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -92,6 +96,47 @@ Add the server to your Claude Desktop configuration file:
   }
 }
 ```
+
+#### Option 2: Remote Mode (SSE/HTTP Transport)
+
+For remote access or when running the server on a different machine:
+
+1. **Start the server in SSE mode:**
+
+```bash
+# Using the startup script (recommended)
+./start-server.sh
+
+# Or manually
+USE_SSE=true PORT=3000 \
+  NOWCERTS_USERNAME="your-username" \
+  NOWCERTS_PASSWORD="your-password" \
+  node dist/index.js
+```
+
+2. **Connect from Claude Desktop using Custom Connector:**
+
+In Claude Desktop, use the "Custom Connector" feature with the SSE endpoint URL:
+- Local: `http://localhost:3000/sse`
+- Remote: `https://your-domain.com/sse`
+
+3. **For production deployments:**
+
+See [SSE_SERVER_SETUP.md](./SSE_SERVER_SETUP.md) for detailed instructions on:
+- Reverse proxy configuration (nginx/caddy)
+- SSL certificate setup
+- Process management (PM2, systemd)
+- Firewall and security considerations
+
+4. **Test server (no credentials required):**
+
+For testing the SSE connection without NowCerts credentials:
+
+```bash
+node test-sse.js
+```
+
+Then connect to `http://localhost:3000/sse` from Claude Desktop.
 
 ## Available Tools
 
