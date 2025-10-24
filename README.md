@@ -120,7 +120,26 @@ In Claude Desktop, use the "Custom Connector" feature with the SSE endpoint URL:
 - Local: `http://localhost:3000/sse`
 - Remote: `https://your-domain.com/sse`
 
-3. **For production deployments:**
+3. **Docker deployment (recommended for production):**
+
+For running alongside existing Docker services with automatic SSL:
+
+```bash
+# Quick deployment
+./deploy.sh
+
+# Or manual deployment
+cp .env.example .env  # Edit and add your credentials
+docker-compose up -d --build
+```
+
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for:
+- Integration with existing reverse proxies (Traefik, nginx-proxy)
+- Standalone deployment with systemd
+- SSL/HTTPS configuration
+- Multiple deployment options
+
+4. **For production deployments without Docker:**
 
 See [SSE_SERVER_SETUP.md](./SSE_SERVER_SETUP.md) for detailed instructions on:
 - Reverse proxy configuration (nginx/caddy)
@@ -128,7 +147,7 @@ See [SSE_SERVER_SETUP.md](./SSE_SERVER_SETUP.md) for detailed instructions on:
 - Process management (PM2, systemd)
 - Firewall and security considerations
 
-4. **Test server (no credentials required):**
+5. **Test server (no credentials required):**
 
 For testing the SSE connection without NowCerts credentials:
 
