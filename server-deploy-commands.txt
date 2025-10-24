@@ -1,0 +1,27 @@
+# Commands to run on srv992249
+
+# Step 1: Check what reverse proxy is running with n8n
+echo "=== Checking reverse proxy setup ==="
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+
+# Step 2: Check for specific reverse proxy types
+docker ps | grep -iE "traefik|nginx-proxy|caddy"
+
+# Step 3: Build and start the MCP server container
+cd ~/Nowcerts-MCP
+docker compose up -d --build
+
+# Step 4: Check container status
+docker compose ps
+
+# Step 5: View logs
+docker compose logs -f nowcerts-mcp
+
+# Step 6: Test the server (from another terminal)
+curl http://localhost:3000/health
+
+# Step 7: If using Traefik, check if the route is working
+curl -H "Host: mcp.srv992249.hstgr.cloud" http://localhost/health
+
+# Step 8: Check container networks
+docker network inspect proxy
