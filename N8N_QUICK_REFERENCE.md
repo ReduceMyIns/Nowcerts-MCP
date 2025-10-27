@@ -132,7 +132,7 @@ Name, phone, email, address, DOB
 **If customer provides VIN:**
 ```
 → nhtsa_decodeVin: Get year/make/model/trim
-→ nhtsa_getRecallsByVin: Check for recalls
+→ nhtsa_checkRecalls: Check for recalls
 → If recalls: "By the way, there's an open recall on this vehicle for [issue]."
 ```
 
@@ -312,7 +312,7 @@ nowcerts_driver_insert           → Add driver
 fenris_prefillHousehold          → Get vehicles/residents/property
 smarty_verifyAddress             → Verify/standardize address
 nhtsa_decodeVin                  → Decode VIN to vehicle details
-nhtsa_getRecallsByVin            → Check for recalls
+nhtsa_checkRecalls               → Check for recalls
 askkodiak_classifyBusiness       → Commercial risk classification
 ```
 

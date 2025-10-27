@@ -212,7 +212,7 @@ With 100/300/100 liability, your premium would be $185/month. With state minimum
 **Customer**: Yes, it's 5YJ3E1EA5PF123456
 
 *[Agent calls nhtsa_decodeVin]*
-*[Agent calls nhtsa_getRecallsByVin - no recalls]*
+*[Agent calls nhtsa_checkRecalls - no recalls]*
 
 **Agent**: Great, I've got all the details on the 2024 Tesla Model 3 Long Range. A few quick questions:
 
