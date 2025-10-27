@@ -139,7 +139,7 @@ After getting an address, silently:
 ### Decode VINs When Provided
 If customer provides a VIN:
 1. Call `nhtsa_decodeVin` to get year/make/model/trim
-2. Call `nhtsa_getRecallsByVin` to check for recalls
+2. Call `nhtsa_checkRecalls` to check for recalls
 3. If recalls exist, inform customer: "By the way, there's an open recall on this vehicle for [issue]. You may want to get that addressed."
 
 ### Use Fenris Vehicle Data
