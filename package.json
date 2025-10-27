@@ -14,7 +14,8 @@
     "dev": "tsc && node dist/index.js",
     "create-vapi-assistant": "node scripts/create-vapi-assistant.js",
     "list-vapi-assistants": "node scripts/list-vapi-assistants.js",
-    "tag-carriers": "node scripts/tag-carriers.js"
+    "tag-carriers": "node scripts/tag-carriers.js",
+    "bulk-tag-carriers": "node scripts/bulk-tag-carriers-from-list.js"
   },
   "keywords": [
     "mcp",
