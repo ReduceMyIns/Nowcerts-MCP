@@ -945,6 +945,88 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
       required: ["tag"],
     },
   },
+  {
+    name: "nowcerts_tag_getTagsList",
+    description: `Get comprehensive tags list with full insured/carrier details via OData endpoint.
+
+CRITICAL FOR CARRIER SERVICE LEVEL ROUTING:
+This endpoint returns tags WITH the full related entity details (insureds, carriers, prospects, etc.).
+All entities in NowCerts share the same database table and use "insuredDatabaseId" as the primary key.
+
+Use this tool to:
+1. **Check carrier service levels**: Filter by carrier name and tag name (e.g., "Full Service")
+2. **Find tagged carriers**: Get carriers with specific service level tags
+3. **Audit tag assignments**: See which entities have which tags
+4. **Routing decisions**: Determine if a carrier can handle service requests
+
+CARRIER SERVICE LEVELS (defined by tags):
+- "Full Service" → Transfer for: policy changes, billing, claims, general inquiries
+- "Billing & Claim Service" → Transfer ONLY for: billing questions, filing claims
+- "Agency Service" → NEVER transfer, always book appointment with agency staff
+
+Each tag result includes:
+- id: Tag assignment UUID
+- tagName: The tag name (e.g., "Full Service")
+- tagDescription: Description of the tag
+- insuredDatabaseId: UUID of the related entity (carrier, insured, prospect, etc.)
+- insuredCommercialName: Carrier/company name
+- insuredEmail, insuredPhoneNumber, insuredCellPhone: Contact information
+- insuredAddressLine1, insuredCity, insuredState, insuredZipCode: Address
+- insuredType: Entity type
+
+Supports OData query parameters:
+- $filter: Filter by tagName, insuredCommercialName, insuredDatabaseId, etc.
+  Examples:
+  - "tagName eq 'Full Service'" → Get all Full Service tagged entities
+  - "tagName eq 'Full Service' and contains(insuredCommercialName, 'Progressive')" → Check if Progressive is Full Service
+  - "insuredDatabaseId eq 'uuid'" → Get all tags for a specific carrier
+- $orderby: Sort results (default: 'tagName asc')
+- $top: Limit results (default: 1000)
+- $skip: Pagination offset
+- $count: Include total count
+
+Typical workflow:
+1. Customer requests service for existing policy
+2. Look up policy to get carrier
+3. Use this tool: filter by carrier name and check for service level tags
+4. Route appropriately:
+   - Full Service → Transfer to carrier
+   - Billing & Claim Service → Transfer only if billing/claim request
+   - No tag or Agency Service → Book appointment with Sherry Norton
+
+Example filters:
+- Check if Progressive is Full Service:
+  "$filter=tagName eq 'Full Service' and contains(insuredCommercialName, 'Progressive')"
+- Get all Full Service carriers:
+  "$filter=tagName eq 'Full Service'"
+- Get all tags for specific carrier UUID:
+  "$filter=insuredDatabaseId eq 'fdefe53d-d782-f9f0-96c3-2c680ee677fb'"`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Examples: \"tagName eq 'Full Service'\", \"contains(insuredCommercialName, 'Progressive')\"",
+        },
+        $orderby: {
+          type: "string",
+          description: "Order by field (default: 'tagName asc'). Examples: 'tagName asc', 'insuredCommercialName asc'",
+        },
+        $top: {
+          type: "number",
+          description: "Maximum number of records to return (default: 1000)",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip for pagination",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response (default: true)",
+        },
+      },
+    },
+  },
 
   // ========== DRIVER ENDPOINTS ==========
   {
@@ -2135,6 +2217,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   // Tag
   nowcerts_tag_getTags: { method: "GET", path: "/Zapier/GetTags" },
   nowcerts_tag_insert: { method: "POST", path: "/Zapier/InsertTagApply" },
+  nowcerts_tag_getTagsList: { method: "GET", path: "/TagsList" },
 
   // Driver
   nowcerts_driver_getDrivers: { method: "GET", path: "/Zapier/GetDrivers" },
