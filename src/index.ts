@@ -954,19 +954,19 @@ This endpoint returns tags WITH the full related entity details (insureds, carri
 All entities in NowCerts share the same database table and use "insuredDatabaseId" as the primary key.
 
 Use this tool to:
-1. **Check carrier service levels**: Filter by carrier name and tag name (e.g., "Full Service")
-2. **Find tagged carriers**: Get carriers with specific service level tags
+1. **Check carrier service levels by ID**: Filter by carrier insuredDatabaseId (UUID) to get all tags
+2. **Find tagged entities**: Get all entities with specific tags
 3. **Audit tag assignments**: See which entities have which tags
 4. **Routing decisions**: Determine if a carrier can handle service requests
 
 CARRIER SERVICE LEVELS (defined by tags):
 - "Full Service" → Transfer for: policy changes, billing, claims, general inquiries
-- "Billing & Claim Service" → Transfer ONLY for: billing questions, filing claims
-- "Agency Service" → NEVER transfer, always book appointment with agency staff
+- "Partial Service" → Transfer ONLY for: billing questions, filing claims
+- "Agency Serviced" → NEVER transfer, always book appointment with agency staff
 
 Each tag result includes:
 - id: Tag assignment UUID
-- tagName: The tag name (e.g., "Full Service")
+- tagName: The tag name (e.g., "Full Service", "Partial Service", "Agency Serviced")
 - tagDescription: Description of the tag
 - insuredDatabaseId: UUID of the related entity (carrier, insured, prospect, etc.)
 - insuredCommercialName: Carrier/company name
@@ -975,32 +975,52 @@ Each tag result includes:
 - insuredType: Entity type
 
 Supports OData query parameters:
-- $filter: Filter by tagName, insuredCommercialName, insuredDatabaseId, etc.
-  Examples:
-  - "tagName eq 'Full Service'" → Get all Full Service tagged entities
-  - "tagName eq 'Full Service' and contains(insuredCommercialName, 'Progressive')" → Check if Progressive is Full Service
-  - "insuredDatabaseId eq 'uuid'" → Get all tags for a specific carrier
+- $filter: Filter by insuredDatabaseId (UUID), insuredCommercialName (name), or tagName
+  Two methods available:
+  1. By insuredDatabaseId: "insuredDatabaseId eq 'uuid'" → Most reliable (exact UUID match)
+  2. By carrier name: "insuredCommercialName eq 'Progressive'" → Works but less reliable (name variations)
 - $orderby: Sort results (default: 'tagName asc')
 - $top: Limit results (default: 1000)
 - $skip: Pagination offset
 - $count: Include total count
 
-Typical workflow:
+CORRECT WORKFLOW (ID-based lookup - RECOMMENDED):
 1. Customer requests service for existing policy
-2. Look up policy to get carrier
-3. Use this tool: filter by carrier name and check for service level tags
-4. Route appropriately:
-   - Full Service → Transfer to carrier
-   - Billing & Claim Service → Transfer only if billing/claim request
-   - No tag or Agency Service → Book appointment with Sherry Norton
+2. Look up policy → Get carrierId (this IS the insuredDatabaseId for the carrier)
+3. Call this tool: "$filter=insuredDatabaseId eq '{carrierId}'"
+4. Check returned tags array for service level tag:
+   - Contains "Full Service" → Transfer to carrier for most requests
+   - Contains "Partial Service" → Transfer ONLY for billing/claims, book appointment for other requests
+   - Contains "Agency Serviced" OR no service tag → NEVER transfer, always book appointment
+
+ALTERNATIVE WORKFLOW (Name-based lookup - if ID unavailable):
+1. Get carrier name from policy (e.g., "Progressive")
+2. Call this tool: "$filter=insuredCommercialName eq 'Progressive'"
+3. Check returned tags array for service level tag (same logic as above)
+
+IMPORTANT:
+- Prefer insuredDatabaseId (UUID) when available - it's unique and exact
+- Carrier names can have variations, but insuredCommercialName eq works for exact matches
+- UUIDs are more reliable because they never change
+- A single carrier can have multiple tags (service level + other tags)
+- Check for presence of service level tags in the results array
+
+Policy lookup returns:
+- carrierId: The carrier's insuredDatabaseId (use for ID-based lookup)
+- carrierName: Carrier display name (use for name-based lookup if ID unavailable)
 
 Example filters:
-- Check if Progressive is Full Service:
-  "$filter=tagName eq 'Full Service' and contains(insuredCommercialName, 'Progressive')"
-- Get all Full Service carriers:
+- Get all tags for specific carrier by ID (PRIMARY METHOD):
+  "$filter=insuredDatabaseId eq 'fdefe53d-d782-f9f0-96c3-2c680ee677fb'"
+
+- Get all tags for specific carrier by name (ALTERNATIVE):
+  "$filter=insuredCommercialName eq 'Progressive'"
+
+- Get all Full Service carriers (for reporting):
   "$filter=tagName eq 'Full Service'"
-- Get all tags for specific carrier UUID:
-  "$filter=insuredDatabaseId eq 'fdefe53d-d782-f9f0-96c3-2c680ee677fb'"`,
+
+- Partial match on carrier name (use contains):
+  "$filter=contains(insuredCommercialName, 'Progres')"`,
     inputSchema: {
       type: "object",
       properties: {

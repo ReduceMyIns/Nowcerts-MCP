@@ -28,8 +28,8 @@ const NOWCERTS_PASSWORD = process.env.NOWCERTS_PASSWORD;
 // Service levels
 const SERVICE_LEVELS = {
   FULL: 'Full Service',
-  BILLING: 'Billing & Claim Service',
-  AGENCY: 'Agency Service'
+  PARTIAL: 'Partial Service',
+  AGENCY: 'Agency Serviced'
 };
 
 let accessToken = null;
@@ -215,11 +215,11 @@ async function listCarriers() {
         if (tag === SERVICE_LEVELS.FULL) {
           console.log(`   ✓ Full Service`);
           fullServiceCount++;
-        } else if (tag === SERVICE_LEVELS.BILLING) {
-          console.log(`   ✓ Billing & Claim Service`);
+        } else if (tag === SERVICE_LEVELS.PARTIAL) {
+          console.log(`   ✓ Partial Service`);
           billingCount++;
         } else if (tag === SERVICE_LEVELS.AGENCY) {
-          console.log(`   ✓ Agency Service`);
+          console.log(`   ✓ Agency Serviced`);
           agencyCount++;
         }
       });
@@ -232,8 +232,8 @@ async function listCarriers() {
   console.log('═'.repeat(80));
   console.log(`Total Carriers: ${carriers.length}`);
   console.log(`  Full Service: ${fullServiceCount}`);
-  console.log(`  Billing & Claim Service: ${billingCount}`);
-  console.log(`  Agency Service: ${agencyCount}`);
+  console.log(`  Partial Service: ${billingCount}`);
+  console.log(`  Agency Serviced: ${agencyCount}`);
   console.log(`  Not Tagged: ${untaggedCount}`);
   console.log();
 }
@@ -260,8 +260,8 @@ async function interactiveMode() {
   console.log();
   console.log('For each carrier, enter:');
   console.log('  1 = Full Service');
-  console.log('  2 = Billing & Claim Service');
-  console.log('  3 = Agency Service');
+  console.log('  2 = Partial Service');
+  console.log('  3 = Agency Serviced');
   console.log('  s = Skip');
   console.log('  q = Quit');
   console.log();
@@ -413,8 +413,8 @@ async function main() {
       console.log();
       console.log('Service Levels:');
       console.log('  "Full Service"');
-      console.log('  "Billing & Claim Service"');
-      console.log('  "Agency Service"');
+      console.log('  "Partial Service"');
+      console.log('  "Agency Serviced"');
     }
   } catch (error) {
     console.error('\n❌ Error:', error.message);

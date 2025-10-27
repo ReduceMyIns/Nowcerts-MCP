@@ -58,13 +58,13 @@ All carriers in NowCerts are tagged with their service level:
    - Claims (file or inquire)
    - General policy information
 
-2. **"Billing & Claim Service"** → Transfer ONLY for billing and claims
+2. **"Partial Service"** → Transfer ONLY for billing and claims
    - Billing questions (due dates, payment methods)
    - File new claims
    - Existing claim status
    - ❌ NOT for: policy changes, certificates, cancellations
 
-3. **"Agency Service"** → NEVER transfer, always book appointment
+3. **"Agency Serviced"** → NEVER transfer, always book appointment
    - All requests handled by agency staff
    - Book with Sherry Norton (service) or Chase Henderson (sales)
 
@@ -74,22 +74,23 @@ All carriers in NowCerts are tagged with their service level:
 Customer: "I need to add a car to my policy"
     ↓
 1. Nathan searches for customer by phone → Finds policy
-2. Identifies carrier from policy (e.g., "Progressive")
+2. Extracts carrierId (insuredDatabaseId) from policy
 3. Calls nowcerts_tag_getTagsList
-   Filter: "tagName eq 'Full Service' and contains(insuredCommercialName, 'Progressive')"
-4. Decision Tree:
+   Filter: "$filter=insuredDatabaseId eq '{carrierId}'"
+   (Alternative if ID unavailable: "$filter=insuredCommercialName eq 'Progressive'")
+4. Check returned tags array for service level tag:
 
-   IF Found with "Full Service" tag:
+   IF Contains "Full Service" tag:
      → "Great! Progressive can help you with that right away. Let me transfer you."
      → Transfer to carrier phone number
      → Log in NowCerts
 
-   IF Found with "Billing & Claim Service" tag:
+   IF Contains "Partial Service" tag:
      → "For adding a vehicle, I'll need to book you with our service team."
      → Book appointment with Sherry Norton
      → Email details
 
-   IF No tag found OR "Agency Service":
+   IF Contains "Agency Serviced" OR no service level tag:
      → "I'll get you set up with Sherry Norton who handles policy changes."
      → Book appointment
 ```
