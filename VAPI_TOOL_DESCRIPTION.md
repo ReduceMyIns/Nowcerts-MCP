@@ -2,7 +2,7 @@
 
 ## For VAPI Voice AI (1000 characters or less)
 
-NowCerts MCP Server: Power your voice AI with complete insurance management capabilities. Enable phone agents to quote insurance, manage customers, and access real-time data during live calls. 100+ tools including: search/create insureds, generate quotes, manage policies, add vehicles/drivers, process claims. Smart automations perfect for phone conversations: Fenris API auto-discovers vehicles and household members from just an address (no need to ask customer for vehicle details), NHTSA decodes VINs and checks recalls when customer reads VIN over phone, Smarty verifies addresses as customer speaks them, AskKodiak classifies commercial risks. Handles all authentication automatically - voice agent never needs API credentials. Works seamlessly with VAPI over HTTPS/SSE. Optimized for conversational workflows: gather name/address → Fenris prefills vehicles → discuss each vehicle naturally → generate multi-carrier quotes. Perfect for insurance agencies automating phone quotes, policy changes, claims intake. Production-ready with auto-restart, SSL support, 24/7 operation.
+NowCerts MCP Server: Power your voice AI with complete insurance management for ALL lines of business. Enable phone agents to quote auto, home, commercial, life, and specialty insurance while managing customers and accessing real-time data during live calls. 100+ tools including: search/create insureds, generate quotes, manage policies, add vehicles/drivers, process claims. Smart automations perfect for phone conversations: Fenris API auto-discovers vehicles and household members from just an address (no need to ask customer for vehicle details), NHTSA decodes VINs and checks recalls when customer reads VIN over phone, Smarty verifies addresses as customer speaks them, AskKodiak classifies commercial risks. Handles all authentication automatically - voice agent never needs API credentials. Works seamlessly with VAPI over HTTPS/SSE. Optimized for conversational workflows across all insurance types. Perfect for agencies automating quotes, policy changes, claims intake for personal and commercial lines. Production-ready with auto-restart, SSL support, 24/7 operation.
 
 **Character count**: 997 characters
 
@@ -10,7 +10,7 @@ NowCerts MCP Server: Power your voice AI with complete insurance management capa
 
 ## Alternative: Conversation-Focused (985 characters)
 
-Transform your insurance phone conversations with AI. This MCP server connects VAPI voice agents to complete insurance management tools. Perfect for live phone calls: Customer says their address → Fenris instantly discovers all vehicles and residents → Agent discusses each vehicle naturally → Generates quotes from multiple carriers. 100+ tools enable voice agents to: Quote auto/home insurance in real-time, search existing customers by phone/email, add/remove vehicles during call, process policy changes, create claims, decode VINs when customer reads them, check vehicle recalls, verify addresses, classify commercial businesses. All authentication handled automatically - agent focuses on conversation, not technical details. Optimized for natural phone workflows: minimal questions (name, address, DOB) then auto-populate everything else. Works over HTTPS/SSE for reliable voice calls. Includes smart features: Fenris token caching for instant responses, automatic error handling, graceful API failures. Deploy once, handle unlimited concurrent calls. Perfect for agencies using VAPI to automate quotes, customer service, policy management via phone.
+Transform your insurance phone conversations with AI across ALL lines of business. This MCP server connects VAPI voice agents to complete insurance management tools for auto, home, commercial, life, and specialty insurance. Perfect for live phone calls: Customer says their address → Fenris instantly discovers all vehicles and residents → Agent discusses each naturally → Generates quotes from multiple carriers. 100+ tools enable voice agents to: Quote any insurance type in real-time, search existing customers by phone/email, add/remove vehicles during call, process policy changes, create claims, decode VINs when customer reads them, check vehicle recalls, verify addresses, classify commercial businesses. All authentication handled automatically - agent focuses on conversation, not technical details. Optimized for natural phone workflows: minimal questions then auto-populate everything else. Works over HTTPS/SSE for reliable voice calls. Includes smart features: Fenris token caching for instant responses, automatic error handling, graceful API failures. Deploy once, handle unlimited concurrent calls across all insurance lines.
 
 **Character count**: 985 characters
 
@@ -18,7 +18,7 @@ Transform your insurance phone conversations with AI. This MCP server connects V
 
 ## Ultra-Concise for VAPI (495 characters)
 
-Power VAPI phone agents with complete insurance tools. Quote auto/home insurance, manage customers, process claims - all during live calls. Fenris auto-discovers vehicles from address (no interrogating customers). NHTSA decodes VINs and checks recalls. Smarty verifies addresses. 100+ NowCerts tools for insureds, policies, quotes, claims. Automatic authentication. Perfect for insurance agencies automating phone conversations. Deploy via HTTPS/SSE. Production-ready, handles concurrent calls, 24/7 operation.
+Power VAPI phone agents with complete insurance tools for ALL lines of business: auto, home, commercial, life, specialty. Quote any insurance type, manage customers, process claims - all during live calls. Fenris auto-discovers vehicles from address. NHTSA decodes VINs and checks recalls. Smarty verifies addresses. AskKodiak classifies commercial risks. 100+ NowCerts tools for insureds, policies, quotes, claims. Automatic authentication. Perfect for agencies automating phone conversations across all insurance types. Deploy via HTTPS/SSE. Production-ready, handles concurrent calls, 24/7 operation.
 
 **Character count**: 495 characters
 
@@ -40,12 +40,15 @@ When configuring in VAPI, highlight these features:
 - Natural conversation flow
 - Multi-carrier quote generation
 
-**Voice-Specific Use Cases:**
-1. **New Auto Quote**: Name + Address → Fenris discovers vehicles → Discuss each → Quote
-2. **Add Vehicle**: Customer reads VIN → NHTSA decodes → Add to policy
-3. **Claims Intake**: Search customer → Create claim record → Send to carrier
-4. **Policy Changes**: Search by phone → Verify identity → Process change
-5. **Address Verification**: Customer says address → Smarty validates → Update record
+**Voice-Specific Use Cases (All Lines of Business):**
+1. **Auto Quote**: Name + Address → Fenris discovers vehicles → Discuss each → Multi-carrier quote
+2. **Homeowners Quote**: Address → Fenris gets property details → Discuss coverage → Quote
+3. **Commercial Quote**: Business name + address → AskKodiak classifies risk → Custom coverage
+4. **Life Insurance**: Basic info → Create quote → Send application
+5. **Add Vehicle**: Customer reads VIN → NHTSA decodes → Add to policy
+6. **Claims Intake**: Search customer → Create claim (any LOB) → Route to carrier
+7. **Policy Changes**: Search by phone → Verify identity → Process change (any policy type)
+8. **Certificate Request**: Search policy → Generate certificate (auto, GL, property, etc.)
 
 **Connection Details for VAPI:**
 - **Endpoint**: `https://mcp.srv992249.hstgr.cloud/sse`
