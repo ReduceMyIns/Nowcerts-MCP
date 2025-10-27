@@ -6,8 +6,12 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   Tool,
+  isInitializeRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios, { AxiosInstance } from "axios";
+import express from "express";
+import { randomUUID } from "node:crypto";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
 // NowCerts API Configuration
 const API_BASE_URL = "https://api.nowcerts.com/api";
@@ -3210,9 +3214,133 @@ Additional API documentation:
 
 // Start the server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("NowCerts MCP Server running on stdio");
+  const useSSE = process.env.USE_SSE === 'true';
+  const port = parseInt(process.env.PORT || '3000', 10);
+
+  if (useSSE) {
+    // SSE/HTTP Server mode
+    const app = express();
+    app.use(express.json());
+
+    // Store transports by session ID
+    const transports: Record<string, StreamableHTTPServerTransport> = {};
+
+    // Add CORS headers
+    app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+      }
+      next();
+    });
+
+    // SSE endpoint - POST for messages
+    app.post('/sse', async (req, res) => {
+      console.log('Received POST request to /sse');
+      try {
+        const sessionId = req.headers['mcp-session-id'] as string;
+        let transport: StreamableHTTPServerTransport | undefined;
+
+        if (sessionId && transports[sessionId]) {
+          // Reuse existing transport
+          transport = transports[sessionId];
+        } else if (!sessionId && isInitializeRequest(req.body)) {
+          // New initialization request
+          transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: sessionId => {
+              console.log(`Session initialized with ID: ${sessionId}`);
+              transports[sessionId] = transport!;
+            }
+          });
+
+          // Connect the transport to the MCP server
+          await server.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+          return;
+        } else {
+          // Invalid request
+          res.status(400).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32000,
+              message: 'Bad Request: No valid session ID provided'
+            },
+            id: null
+          });
+          return;
+        }
+
+        // Handle the request with existing transport
+        if (transport) {
+          await transport.handleRequest(req, res, req.body);
+        }
+      } catch (error: any) {
+        console.error('Error handling POST request:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32603,
+              message: 'Internal server error: ' + error.message
+            },
+            id: null
+          });
+        }
+      }
+    });
+
+    // SSE endpoint - GET for SSE stream
+    app.get('/sse', async (req, res) => {
+      console.log('Received GET request to /sse (establishing SSE stream)');
+      const sessionId = req.headers['mcp-session-id'] as string;
+
+      if (!sessionId || !transports[sessionId]) {
+        res.status(400).send('Invalid or missing session ID');
+        return;
+      }
+
+      console.log(`Establishing SSE stream for session ${sessionId}`);
+      const transport = transports[sessionId];
+      await transport.handleRequest(req, res);
+    });
+
+    // Health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({ status: 'ok', service: 'nowcerts-mcp-server' });
+    });
+
+    // Start the HTTP server
+    app.listen(port, () => {
+      console.log(`NowCerts MCP SSE Server listening on port ${port}`);
+      console.log(`SSE endpoint available at: http://localhost:${port}/sse`);
+      console.log(`Health check available at: http://localhost:${port}/health`);
+    });
+
+    // Handle server shutdown
+    process.on('SIGINT', async () => {
+      console.log('Shutting down server...');
+      // Close all active transports
+      for (const sessionId in transports) {
+        try {
+          console.log(`Closing transport for session ${sessionId}`);
+          await transports[sessionId].close();
+          delete transports[sessionId];
+        } catch (error) {
+          console.error(`Error closing transport for session ${sessionId}:`, error);
+        }
+      }
+      console.log('Server shutdown complete');
+      process.exit(0);
+    });
+  } else {
+    // Stdio mode (default for Claude Desktop)
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("NowCerts MCP Server running on stdio");
+  }
 }
 
 main().catch((error) => {
