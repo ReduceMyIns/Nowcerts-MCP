@@ -248,6 +248,71 @@ Full documentation: https://docs.google.com/document/d/11Xk7TviRujq806pLK8pQTcdz
     },
   },
 
+  {
+    name: "nowcerts_lineOfBusiness_getList",
+    description: `Get the complete list of available Lines of Business (insurance products) in NowCerts.
+
+Returns all 129+ insurance product types including:
+
+**Personal Lines** (66+): Personal Auto, Homeowners, Renters, Condo, Mobile Home, Motorcycle, RV, ATV, Snowmobile, Watercraft, Flood, Earthquake, Wind, Hail, Pet Insurance, Wedding Insurance, Travel Insurance, Identity Fraud, Special Event, Landlord, Vacant Dwelling, Personal Umbrella, and more.
+
+**Commercial Lines** (55+): Commercial Auto, General Liability, BOP, Commercial Property, Workers Comp, Professional Liability, E&O, D&O, Cyber Liability, Employment Practices, Garage & Dealers, Truckers, Motor Carrier, Aviation, Marine, Agriculture, Pollution, Surety Bonds, Liquor Liability, and more.
+
+**Life & Health** (8+): Life, Term Life, Annuities, Disability Income, Long-Term Care, Health, Dental, Medical.
+
+Each LOB includes:
+- id: Unique identifier (GUID)
+- name: Product name (e.g., "Personal Auto", "Homeowners", "Cyber/Network Liability")
+- class: Category ("Personal", "Commercial", "Life-Health", or "" for miscellaneous)
+- lineOfBusinessClassId: GUID linking to class
+- createDate: When the LOB was added to NowCerts
+
+Use this tool to:
+1. **Discover available products**: Show customers what insurance types you can quote
+2. **Validate LOB names**: Ensure correct naming when creating quotes/policies
+3. **Filter by class**: Get only Personal, Commercial, or Life-Health products
+4. **Search by name**: Find specific insurance types
+
+Supports OData query parameters:
+- $filter: Filter by name, class, etc. (e.g., "$filter=class eq 'Personal'" or "contains(name, 'Auto')")
+- $orderby: Sort results (default: "name asc")
+- $top: Limit results
+- $skip: Pagination offset
+- $count: Include total count
+
+Examples:
+- All LOBs: No parameters
+- Personal lines only: $filter=class eq 'Personal'
+- Auto products: $filter=contains(name, 'Auto')
+- Commercial lines: $filter=class eq 'Commercial'
+- Life/Health: $filter=class eq 'Life-Health'`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Examples: \"class eq 'Personal'\", \"contains(name, 'Auto')\", \"class eq 'Commercial'\"",
+        },
+        $orderby: {
+          type: "string",
+          description: "Order by field (default: 'name asc'). Examples: 'name asc', 'class asc', 'createDate desc'",
+        },
+        $top: {
+          type: "number",
+          description: "Maximum number of records to return (default: 1000)",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip for pagination",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response (default: true)",
+        },
+      },
+    },
+  },
+
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
@@ -1948,6 +2013,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   // Schema & Metadata
   nowcerts_schema_getMetadata: { method: "GET", path: "/$metadata" },
   nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
+  nowcerts_lineOfBusiness_getList: { method: "GET", path: "/LineOfBusinessList" },
 
   // Agent
   nowcerts_agent_getList: { method: "GET", path: "/AgentList" },
