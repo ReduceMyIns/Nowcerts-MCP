@@ -27,8 +27,8 @@ const VAPI_API_URL = 'https://api.vapi.ai';
  * Load and combine system prompts
  */
 function loadSystemPrompt() {
-  const systemPromptPath = path.join(__dirname, 'VAPI_SYSTEM_PROMPT.md');
-  const agencyContextPath = path.join(__dirname, 'VAPI_AGENCY_CONTEXT.md');
+  const systemPromptPath = path.join(__dirname, '../prompts/VAPI_SYSTEM_PROMPT.md');
+  const agencyContextPath = path.join(__dirname, '../prompts/VAPI_AGENCY_CONTEXT.md');
 
   const systemPrompt = fs.readFileSync(systemPromptPath, 'utf-8');
   const agencyContext = fs.readFileSync(agencyContextPath, 'utf-8');

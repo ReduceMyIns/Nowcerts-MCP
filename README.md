@@ -1,20 +1,55 @@
 # NowCerts MCP Server
 
-A comprehensive Model Context Protocol (MCP) server that provides AI assistants with access to all NowCerts API endpoints.
+A comprehensive Model Context Protocol (MCP) server that provides AI assistants with access to all NowCerts API endpoints, plus integration templates for VAPI voice AI and N8N automation.
 
 ## Overview
 
-This MCP server exposes 100+ NowCerts API endpoints plus external insurance data APIs as tools that can be used by AI assistants like Claude. It handles OAuth 2.0 authentication automatically and provides a seamless interface to the NowCerts insurance management platform, along with integrations for Fenris household data, Smarty address validation, and NHTSA vehicle information.
+This MCP server exposes 100+ NowCerts API endpoints plus external insurance data APIs as tools that can be used by AI assistants like Claude, VAPI voice agents, and N8N workflows. It handles OAuth 2.0 authentication automatically and provides a seamless interface to the NowCerts insurance management platform, along with integrations for Fenris household data, Smarty address validation, NHTSA vehicle information, and AskKodiak commercial insurance classification.
+
+## Repository Structure
+
+```
+Nowcerts-MCP/
+├── src/                    # MCP Server source code
+│   └── index.ts           # Main server implementation
+├── prompts/               # System prompts for AI assistants
+│   ├── VAPI_SYSTEM_PROMPT.md         # Voice AI conversation guidelines
+│   ├── VAPI_AGENCY_CONTEXT.md        # Agency-specific configuration
+│   ├── N8N_SYSTEM_PROMPT.md          # Chat/SMS/Email AI guidelines
+│   └── N8N_QUICK_REFERENCE.md        # Quick reference for workflows
+├── examples/              # Example conversations and call flows
+│   ├── VAPI_EXAMPLE_CALLS.md         # Voice call examples
+│   └── N8N_EXAMPLE_CONVERSATION.md   # Chat conversation examples
+├── scripts/               # Helper scripts and utilities
+│   ├── create-vapi-assistant.js      # Create VAPI voice assistants
+│   └── list-vapi-assistants.js       # List existing assistants
+├── docs/                  # Documentation
+│   ├── VAPI_INTEGRATION.md           # VAPI voice AI setup guide
+│   ├── DEPLOYMENT_GUIDE.md           # Production deployment
+│   ├── TOOL_DESCRIPTION.md           # MCP tool descriptions
+│   └── VAPI_TOOL_DESCRIPTION.md      # VAPI-specific descriptions
+├── dist/                  # Compiled JavaScript (generated)
+└── README.md             # This file
+```
 
 ## Features
 
+### MCP Server
 - **Complete API Coverage**: All 100+ NowCerts endpoints exposed as MCP tools
 - **Automatic Authentication**: OAuth 2.0 password grant flow with automatic token refresh
+- **129+ Lines of Business**: Dynamic discovery of all insurance products
+- **80+ Insurance Carriers**: Dynamic carrier discovery and management
 - **25+ Entity Types**: Agents, Insureds, Policies, Claims, Prospects, Drivers, Vehicles, and more
-- **External API Integrations**: Fenris household data, Smarty address validation, NHTSA vehicle data
+- **External API Integrations**: Fenris household data, Smarty address validation, NHTSA vehicle data, AskKodiak commercial classification
 - **Smart Token Caching**: Fenris OAuth tokens cached and auto-renewed (70% faster)
 - **Type-Safe**: Built with TypeScript for reliability
-- **Easy Integration**: Works with Claude Desktop and other MCP clients
+- **Multiple Transports**: Stdio (local), SSE (remote), HTTP (remote)
+
+### AI Assistant Integrations
+- **VAPI Voice AI**: Pre-built prompts and scripts for insurance quote phone calls
+- **N8N Automation**: System prompts for chat, SMS, and email workflows
+- **Conversational Design**: Natural language processing optimized for insurance workflows
+- **Multi-Channel Support**: Phone, chat, SMS, and email using the same MCP tools
 
 ## Installation
 
@@ -133,7 +168,7 @@ cp .env.example .env  # Edit and add your credentials
 docker-compose up -d --build
 ```
 
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for:
+See [DEPLOYMENT_GUIDE.md](./docs/DEPLOYMENT_GUIDE.md) for:
 - Integration with existing reverse proxies (Traefik, nginx-proxy)
 - Standalone deployment with systemd
 - SSL/HTTPS configuration
@@ -370,6 +405,79 @@ Claude will use the `nowcerts_prospect_insert` tool with the provided data.
 ```
 
 Claude will use the `nowcerts_policy_getList` tool with date filters.
+
+## AI Assistant Integrations
+
+### VAPI Voice AI (Phone Calls)
+
+Create voice AI assistants that can handle insurance quotes over the phone:
+
+```bash
+# Set your VAPI API key
+export VAPI_API_KEY="your-vapi-private-key"
+
+# Create a voice assistant
+npm run create-vapi-assistant
+
+# List existing assistants
+npm run list-vapi-assistants
+```
+
+The voice assistant will:
+- Answer inbound calls with natural conversation
+- Gather customer information one question at a time
+- Use Fenris to auto-discover vehicles at the address
+- Provide multi-carrier insurance quotes
+- Handle call transfers and appointment booking
+
+**Full Documentation**: [docs/VAPI_INTEGRATION.md](./docs/VAPI_INTEGRATION.md)
+
+**System Prompts**:
+- [prompts/VAPI_SYSTEM_PROMPT.md](./prompts/VAPI_SYSTEM_PROMPT.md) - Voice conversation guidelines
+- [prompts/VAPI_AGENCY_CONTEXT.md](./prompts/VAPI_AGENCY_CONTEXT.md) - Agency-specific configuration
+
+**Examples**: [examples/VAPI_EXAMPLE_CALLS.md](./examples/VAPI_EXAMPLE_CALLS.md)
+
+### N8N Automation (Chat/SMS/Email)
+
+Use the system prompts in your N8N workflows for text-based conversations:
+
+**System Prompts**:
+- [prompts/N8N_SYSTEM_PROMPT.md](./prompts/N8N_SYSTEM_PROMPT.md) - Chat/SMS/Email guidelines
+- [prompts/N8N_QUICK_REFERENCE.md](./prompts/N8N_QUICK_REFERENCE.md) - Quick reference
+
+**Examples**: [examples/N8N_EXAMPLE_CONVERSATION.md](./examples/N8N_EXAMPLE_CONVERSATION.md)
+
+Key differences from voice:
+- Can show lists and formatting
+- Users can scroll back through conversation
+- Links and images are supported
+- Responses can be longer
+
+### Connecting to the MCP Server
+
+All AI assistants (VAPI, N8N, Claude Desktop) connect to the same MCP server:
+
+**Production URL**: `https://mcp.srv992249.hstgr.cloud/sse`
+
+**For VAPI assistants**:
+```json
+{
+  "tools": [
+    {
+      "type": "mcp",
+      "server": {
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "transport": "sse"
+      }
+    }
+  ]
+}
+```
+
+**For N8N workflows**: Use the MCP connector node (or custom HTTP requests to the MCP server)
+
+**For Claude Desktop**: Add to `claude_desktop_config.json` (see Configuration section above)
 
 ## Development
 

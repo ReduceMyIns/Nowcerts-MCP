@@ -12,8 +12,8 @@
     "watch": "tsc --watch",
     "start": "node dist/index.js",
     "dev": "tsc && node dist/index.js",
-    "create-vapi-assistant": "node create-vapi-assistant.js",
-    "list-vapi-assistants": "node list-vapi-assistants.js"
+    "create-vapi-assistant": "node scripts/create-vapi-assistant.js",
+    "list-vapi-assistants": "node scripts/list-vapi-assistants.js"
   },
   "keywords": [
     "mcp",
