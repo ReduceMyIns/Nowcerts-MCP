@@ -313,6 +313,63 @@ Examples:
     },
   },
 
+  {
+    name: "nowcerts_carrier_getList",
+    description: `Get the complete list of insurance carriers/companies available in NowCerts.
+
+Returns all carriers the agency works with, including carrier details such as:
+- Carrier name and contact information
+- Service level (Full Service vs Billing & Claim Service only)
+- Phone numbers for transfers
+- Active/inactive status
+- Supported lines of business
+
+Use this tool to:
+1. **Discover available carriers**: Show customers which companies you represent
+2. **Multi-carrier quoting**: Determine which carriers to get quotes from
+3. **Call transfers**: Get carrier phone numbers for transferring customers
+4. **Service level routing**: Determine if carrier is Full Service or Billing & Claim Service only
+5. **Validate carrier names**: Ensure correct naming when creating policies
+
+Supports OData query parameters:
+- $filter: Filter by name, active status, etc. (e.g., "$filter=active eq true" or "contains(name, 'Progressive')")
+- $orderby: Sort results (default: "changeDate asc")
+- $top: Limit results
+- $skip: Pagination offset
+- $count: Include total count
+
+Examples:
+- All carriers: No parameters
+- Active only: $filter=active eq true
+- Search by name: $filter=contains(name, 'State')
+- Specific carrier: $filter=name eq 'Progressive'`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Examples: \"active eq true\", \"contains(name, 'Progressive')\", \"contains(name, 'State')\"",
+        },
+        $orderby: {
+          type: "string",
+          description: "Order by field (default: 'changeDate asc'). Examples: 'name asc', 'changeDate desc'",
+        },
+        $top: {
+          type: "number",
+          description: "Maximum number of records to return (default: 1000)",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip for pagination",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response (default: true)",
+        },
+      },
+    },
+  },
+
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
@@ -2014,6 +2071,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   nowcerts_schema_getMetadata: { method: "GET", path: "/$metadata" },
   nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
   nowcerts_lineOfBusiness_getList: { method: "GET", path: "/LineOfBusinessList" },
+  nowcerts_carrier_getList: { method: "GET", path: "/CarrierDetailList" },
 
   // Agent
   nowcerts_agent_getList: { method: "GET", path: "/AgentList" },
