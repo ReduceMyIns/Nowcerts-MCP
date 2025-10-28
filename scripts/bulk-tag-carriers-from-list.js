@@ -349,7 +349,7 @@ async function main() {
     // Create lookup map
     const carrierMap = new Map();
     carriers.forEach((carrier) => {
-      const name = carrier.commercialName || carrier.contactName || '';
+      const name = carrier.insuredCommercialName || carrier.contactName || '';
       const normalized = normalizeCarrierName(name);
       if (normalized) {
         carrierMap.set(normalized, carrier);

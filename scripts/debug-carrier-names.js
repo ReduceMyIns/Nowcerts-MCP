@@ -80,7 +80,7 @@ async function main() {
 
     for (let i = 0; i < carriers.length; i++) {
       const carrier = carriers[i];
-      const name = carrier.name || carrier.commercialName || carrier.contactName ||
+      const name = carrier.insuredCommercialName || carrier.commercialName || carrier.contactName ||
                    carrier.carrierName || carrier.companyName || carrier.businessName ||
                    (carrier.firstName && carrier.lastName ? carrier.firstName + ' ' + carrier.lastName : null);
 
@@ -90,7 +90,7 @@ async function main() {
     }
 
     console.log();
-    console.log('Carriers with names found: ' + carriers.filter(c => c.name || c.commercialName || c.contactName || c.carrierName || c.companyName).length);
+    console.log('Carriers with names found: ' + carriers.filter(c => c.insuredCommercialName || c.commercialName || c.contactName || c.carrierName || c.companyName).length);
     console.log();
 
     console.log('='.repeat(80));
