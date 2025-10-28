@@ -313,6 +313,63 @@ Examples:
     },
   },
 
+  {
+    name: "nowcerts_carrier_getList",
+    description: `Get the complete list of insurance carriers/companies available in NowCerts.
+
+Returns all carriers the agency works with, including carrier details such as:
+- Carrier name and contact information
+- Service level (Full Service vs Billing & Claim Service only)
+- Phone numbers for transfers
+- Active/inactive status
+- Supported lines of business
+
+Use this tool to:
+1. **Discover available carriers**: Show customers which companies you represent
+2. **Multi-carrier quoting**: Determine which carriers to get quotes from
+3. **Call transfers**: Get carrier phone numbers for transferring customers
+4. **Service level routing**: Determine if carrier is Full Service or Billing & Claim Service only
+5. **Validate carrier names**: Ensure correct naming when creating policies
+
+Supports OData query parameters:
+- $filter: Filter by name, active status, etc. (e.g., "$filter=active eq true" or "contains(name, 'Progressive')")
+- $orderby: Sort results (default: "changeDate asc")
+- $top: Limit results
+- $skip: Pagination offset
+- $count: Include total count
+
+Examples:
+- All carriers: No parameters
+- Active only: $filter=active eq true
+- Search by name: $filter=contains(name, 'State')
+- Specific carrier: $filter=name eq 'Progressive'`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Examples: \"active eq true\", \"contains(name, 'Progressive')\", \"contains(name, 'State')\"",
+        },
+        $orderby: {
+          type: "string",
+          description: "Order by field (default: 'changeDate asc'). Examples: 'name asc', 'changeDate desc'",
+        },
+        $top: {
+          type: "number",
+          description: "Maximum number of records to return (default: 1000)",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip for pagination",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response (default: true)",
+        },
+      },
+    },
+  },
+
   // ========== AGENT ENDPOINTS ==========
   {
     name: "nowcerts_agent_getList",
@@ -886,6 +943,108 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         },
       },
       required: ["tag"],
+    },
+  },
+  {
+    name: "nowcerts_tag_getTagsList",
+    description: `Get comprehensive tags list with full insured/carrier details via OData endpoint.
+
+CRITICAL FOR CARRIER SERVICE LEVEL ROUTING:
+This endpoint returns tags WITH the full related entity details (insureds, carriers, prospects, etc.).
+All entities in NowCerts share the same database table and use "insuredDatabaseId" as the primary key.
+
+Use this tool to:
+1. **Check carrier service levels by ID**: Filter by carrier insuredDatabaseId (UUID) to get all tags
+2. **Find tagged entities**: Get all entities with specific tags
+3. **Audit tag assignments**: See which entities have which tags
+4. **Routing decisions**: Determine if a carrier can handle service requests
+
+CARRIER SERVICE LEVELS (defined by tags):
+- "Full Service" → Transfer for: policy changes, billing, claims, general inquiries
+- "Partial Service" → Transfer ONLY for: billing questions, filing claims
+- "Agency Serviced" → NEVER transfer, always book appointment with agency staff
+
+Each tag result includes:
+- id: Tag assignment UUID
+- tagName: The tag name (e.g., "Full Service", "Partial Service", "Agency Serviced")
+- tagDescription: Description of the tag
+- insuredDatabaseId: UUID of the related entity (carrier, insured, prospect, etc.)
+- insuredCommercialName: Carrier/company name
+- insuredEmail, insuredPhoneNumber, insuredCellPhone: Contact information
+- insuredAddressLine1, insuredCity, insuredState, insuredZipCode: Address
+- insuredType: Entity type
+
+Supports OData query parameters:
+- $filter: Filter by insuredDatabaseId (UUID), insuredCommercialName (name), or tagName
+  Two methods available:
+  1. By insuredDatabaseId: "insuredDatabaseId eq 'uuid'" → Most reliable (exact UUID match)
+  2. By carrier name: "insuredCommercialName eq 'Progressive'" → Works but less reliable (name variations)
+- $orderby: Sort results (default: 'tagName asc')
+- $top: Limit results (default: 1000)
+- $skip: Pagination offset
+- $count: Include total count
+
+CORRECT WORKFLOW (ID-based lookup - RECOMMENDED):
+1. Customer requests service for existing policy
+2. Look up policy → Get carrierId (this IS the insuredDatabaseId for the carrier)
+3. Call this tool: "$filter=insuredDatabaseId eq '{carrierId}'"
+4. Check returned tags array for service level tag:
+   - Contains "Full Service" → Transfer to carrier for most requests
+   - Contains "Partial Service" → Transfer ONLY for billing/claims, book appointment for other requests
+   - Contains "Agency Serviced" OR no service tag → NEVER transfer, always book appointment
+
+ALTERNATIVE WORKFLOW (Name-based lookup - if ID unavailable):
+1. Get carrier name from policy (e.g., "Progressive")
+2. Call this tool: "$filter=insuredCommercialName eq 'Progressive'"
+3. Check returned tags array for service level tag (same logic as above)
+
+IMPORTANT:
+- Prefer insuredDatabaseId (UUID) when available - it's unique and exact
+- Carrier names can have variations, but insuredCommercialName eq works for exact matches
+- UUIDs are more reliable because they never change
+- A single carrier can have multiple tags (service level + other tags)
+- Check for presence of service level tags in the results array
+
+Policy lookup returns:
+- carrierId: The carrier's insuredDatabaseId (use for ID-based lookup)
+- carrierName: Carrier display name (use for name-based lookup if ID unavailable)
+
+Example filters:
+- Get all tags for specific carrier by ID (PRIMARY METHOD):
+  "$filter=insuredDatabaseId eq 'fdefe53d-d782-f9f0-96c3-2c680ee677fb'"
+
+- Get all tags for specific carrier by name (ALTERNATIVE):
+  "$filter=insuredCommercialName eq 'Progressive'"
+
+- Get all Full Service carriers (for reporting):
+  "$filter=tagName eq 'Full Service'"
+
+- Partial match on carrier name (use contains):
+  "$filter=contains(insuredCommercialName, 'Progres')"`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        $filter: {
+          type: "string",
+          description: "OData filter expression. Examples: \"tagName eq 'Full Service'\", \"contains(insuredCommercialName, 'Progressive')\"",
+        },
+        $orderby: {
+          type: "string",
+          description: "Order by field (default: 'tagName asc'). Examples: 'tagName asc', 'insuredCommercialName asc'",
+        },
+        $top: {
+          type: "number",
+          description: "Maximum number of records to return (default: 1000)",
+        },
+        $skip: {
+          type: "number",
+          description: "Number of records to skip for pagination",
+        },
+        $count: {
+          type: "boolean",
+          description: "Include total count in response (default: true)",
+        },
+      },
     },
   },
 
@@ -2014,6 +2173,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   nowcerts_schema_getMetadata: { method: "GET", path: "/$metadata" },
   nowcerts_schema_getLookupTables: { method: "GET", path: "/$metadata" }, // Will be handled specially
   nowcerts_lineOfBusiness_getList: { method: "GET", path: "/LineOfBusinessList" },
+  nowcerts_carrier_getList: { method: "GET", path: "/CarrierDetailList" },
 
   // Agent
   nowcerts_agent_getList: { method: "GET", path: "/AgentList" },
@@ -2077,6 +2237,7 @@ const endpointMap: Record<string, { method: string; path: string }> = {
   // Tag
   nowcerts_tag_getTags: { method: "GET", path: "/Zapier/GetTags" },
   nowcerts_tag_insert: { method: "POST", path: "/Zapier/InsertTagApply" },
+  nowcerts_tag_getTagsList: { method: "GET", path: "/TagsList" },
 
   // Driver
   nowcerts_driver_getDrivers: { method: "GET", path: "/Zapier/GetDrivers" },
