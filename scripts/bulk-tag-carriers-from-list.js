@@ -274,7 +274,7 @@ async function getCarriers() {
   console.log('📋 Fetching carriers from NowCerts...');
 
   const response = await fetch(
-    `${NOWCERTS_API_URL}/CarrierDetailList?$count=true&$orderby=changeDate asc&$top=1000`,
+    `${NOWCERTS_API_URL}/CarrierDetailList?$count=true&$orderby=changeDate asc&$top=1000&$skip=0`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -349,7 +349,7 @@ async function main() {
     // Create lookup map
     const carrierMap = new Map();
     carriers.forEach((carrier) => {
-      const name = carrier.commercialName || carrier.contactName || '';
+      const name = carrier.name || '';
       const normalized = normalizeCarrierName(name);
       if (normalized) {
         carrierMap.set(normalized, carrier);
