@@ -274,7 +274,7 @@ async function getCarriers() {
   console.log('📋 Fetching carriers from NowCerts...');
 
   const response = await fetch(
-    `${NOWCERTS_API_URL}/CarrierDetailList?$count=true&$orderby=changeDate asc&$top=1000`,
+    `${NOWCERTS_API_URL}/CarrierDetailList?$count=true&$orderby=changeDate asc&$top=1000&$skip=0`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
