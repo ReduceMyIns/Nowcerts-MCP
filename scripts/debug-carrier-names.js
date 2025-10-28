@@ -62,22 +62,36 @@ async function main() {
     const carriers = await getCarriers();
 
     console.log('='.repeat(80));
-    console.log('CARRIER NAMES IN NOWCERTS (First 30)');
+    console.log('CARRIER FULL DATA (First 5 carriers with ALL fields)');
     console.log('='.repeat(80));
     console.log();
 
-    for (let i = 0; i < Math.min(30, carriers.length); i++) {
+    for (let i = 0; i < Math.min(5, carriers.length); i++) {
       const carrier = carriers[i];
-      console.log('[' + (i + 1) + ']');
-      console.log('  ID: ' + carrier.id);
-      console.log('  commercialName: ' + (carrier.commercialName || 'EMPTY'));
-      console.log('  contactName: ' + (carrier.contactName || 'EMPTY'));
-      console.log('  firstName: ' + (carrier.firstName || 'EMPTY'));
-      console.log('  lastName: ' + (carrier.lastName || 'EMPTY'));
-      console.log('  phone: ' + (carrier.phone || carrier.customerServicePhone || 'N/A'));
-      console.log('  status: ' + (carrier.status || 'N/A'));
+      console.log('[' + (i + 1) + '] FULL CARRIER OBJECT:');
+      console.log(JSON.stringify(carrier, null, 2));
       console.log();
     }
+
+    console.log('='.repeat(80));
+    console.log('CARRIER NAMES SUMMARY (All 224 carriers)');
+    console.log('='.repeat(80));
+    console.log();
+
+    for (let i = 0; i < carriers.length; i++) {
+      const carrier = carriers[i];
+      const name = carrier.name || carrier.commercialName || carrier.contactName ||
+                   carrier.carrierName || carrier.companyName || carrier.businessName ||
+                   (carrier.firstName && carrier.lastName ? carrier.firstName + ' ' + carrier.lastName : null);
+
+      if (name) {
+        console.log('[' + (i + 1) + '] Name: ' + name + ' | ID: ' + carrier.id);
+      }
+    }
+
+    console.log();
+    console.log('Carriers with names found: ' + carriers.filter(c => c.name || c.commercialName || c.contactName || c.carrierName || c.companyName).length);
+    console.log();
 
     console.log('='.repeat(80));
     console.log('SAMPLE FROM MASTER LIST (For Comparison)');
