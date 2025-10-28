@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  nowcerts-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nowcerts-mcp
+    restart: unless-stopped
+    environment:
+      - USE_SSE=true
+      - PORT=3000
+      - NODE_ENV=production
+    env_file:
+      - .env
+    expose:
+      - "3000"
+    volumes:
+      - ./logs:/app/logs
+    # Labels for Traefik reverse proxy (if using Traefik)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nowcerts-mcp.rule=Host(`mcp.srv992249.hstgr.cloud`)"
+      - "traefik.http.routers.nowcerts-mcp.entrypoints=web,websecure"
+      - "traefik.http.routers.nowcerts-mcp.tls=true"
+      - "traefik.http.routers.nowcerts-mcp.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.nowcerts-mcp.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+      # For nginx-proxy (uncomment if using nginx-proxy instead of Traefik)
+      # - "VIRTUAL_HOST=mcp.srv992249.hstgr.cloud"
+      # - "VIRTUAL_PORT=3000"
+      # - "LETSENCRYPT_HOST=mcp.srv992249.hstgr.cloud"
+      # - "LETSENCRYPT_EMAIL=admin@srv992249.hstgr.cloud"
+    networks:
+      - proxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true
+    # If the network doesn't exist, create it with: docker network create proxy
