@@ -192,11 +192,15 @@ Use this instead of asking again.
 Before creating any new insured/prospect:
 
 ```javascript
-// Search by phone
-const phoneResults = await nowcerts_insured_getList({ search: phone });
+// Search by phone (use OData filter syntax)
+const phoneResults = await nowcerts_insured_getList({
+  filter: "contains(phone, '555-123-4567') or contains(cellPhone, '555-123-4567')"
+});
 
-// Search by email
-const emailResults = await nowcerts_insured_getList({ search: email });
+// Search by email (use OData filter syntax)
+const emailResults = await nowcerts_insured_getList({
+  filter: "contains(eMail, 'customer@email.com')"
+});
 
 // If found
 if (phoneResults.length > 0 || emailResults.length > 0) {
