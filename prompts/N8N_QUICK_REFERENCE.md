@@ -143,11 +143,15 @@ Name, phone, email, address, DOB
 **Always search silently before creating:**
 
 ```javascript
-// 1. Search by phone
-results = nowcerts_insured_getList({ search: phone })
+// 1. Search by phone (use OData filter syntax)
+results = nowcerts_insured_getList({
+  filter: "contains(phone, '555-123-4567') or contains(cellPhone, '555-123-4567')"
+})
 
-// 2. Search by email
-results = nowcerts_insured_getList({ search: email })
+// 2. Search by email (use OData filter syntax)
+results = nowcerts_insured_getList({
+  filter: "contains(eMail, 'customer@email.com')"
+})
 
 // 3. If found
 if (results.length > 0) {
