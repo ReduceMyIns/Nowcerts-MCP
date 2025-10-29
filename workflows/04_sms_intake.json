@@ -1,0 +1,387 @@
+{
+  "name": "SMS Intake Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sms-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "twilio-webhook",
+      "name": "Webhook - Twilio SMS",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "twilio-sms"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Twilio SMS data\nconst sms = $input.first().json;\n\nreturn {\n  channel: 'sms',\n  messageId: sms.MessageSid || sms.messageSid,\n  messageText: sms.Body || sms.body,\n  customerPhone: sms.From || sms.from,\n  toPhone: sms.To || sms.to,\n  receivedDate: new Date().toISOString(),\n  originalSms: sms\n};"
+      },
+      "id": "extract-sms-data",
+      "name": "Function - Extract SMS Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"Webhook - Classify Message\"].webhookUrl }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "messageText",
+              "value": "={{ $json.messageText }}"
+            },
+            {
+              "name": "customerPhone",
+              "value": "={{ $json.customerPhone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call-classifier",
+      "name": "HTTP - Call Message Classifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $workflow.id }}",
+        "source": "parameter",
+        "options": {}
+      },
+      "id": "load-customer-history",
+      "name": "Execute - Load Customer History",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge classification with SMS data\nconst sms = $input.first().json;\nconst classification = $input.item(1).json;\nconst history = $input.item(2).json;\n\nreturn {\n  ...sms,\n  classification: classification,\n  customerHistory: history,\n  shouldAutoReply: true,\n  replyType: getReplyType(classification.intent, classification.priority)\n};\n\nfunction getReplyType(intent, priority) {\n  if (priority === 'urgent') return 'urgent_acknowledgment';\n  if (intent.includes('quote')) return 'quote_acknowledgment';\n  if (intent.includes('service')) return 'service_acknowledgment';\n  return 'general_acknowledgment';\n}"
+      },
+      "id": "merge-data",
+      "name": "Function - Merge Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are Nathan, a friendly insurance agent writing SMS responses.\n\nCRITICAL: SMS messages must be 160 characters or less. Be extremely concise.\n\nGuidelines:\n- Acknowledge their request briefly\n- For quotes: \"Thanks! I'll email you quote options within 24-48hrs. -Nathan\"\n- For urgent: \"Got it! I'll call you ASAP. -Nathan\"\n- For service: \"Thanks! Processing your request. Will update you soon. -Nathan\"\n- For general: \"Thanks for reaching out! I'll follow up shortly. -Nathan\"\n\nReturn ONLY the SMS text, max 160 characters."
+            },
+            {
+              "role": "user",
+              "message": "=Request Type: {{ $json.classification.intent }}\nPriority: {{ $json.classification.priority }}\nSummary: {{ $json.classification.summary }}\nExisting Customer: {{ $json.customerHistory.summary.isExistingCustomer }}\n\nGenerate a brief SMS auto-reply (max 160 characters)."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "id": "generate-sms-reply",
+      "name": "AI - Generate SMS Reply",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ensure SMS is within 160 character limit\nlet smsText = $input.first().json.response || '';\n\n// Truncate if too long\nif (smsText.length > 160) {\n  smsText = smsText.substring(0, 157) + '...';\n}\n\nreturn {\n  ...$input.first().json,\n  smsReply: smsText,\n  characterCount: smsText.length\n};"
+      },
+      "id": "validate-sms-length",
+      "name": "Function - Validate SMS Length",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "resource": "sms",
+        "operation": "send",
+        "from": "={{ $json.toPhone }}",
+        "to": "={{ $json.customerPhone }}",
+        "message": "={{ $json.smsReply }}",
+        "options": {}
+      },
+      "id": "send-sms",
+      "name": "Twilio - Send SMS Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1650, 300],
+      "credentials": {
+        "twilioApi": {
+          "id": "twilio-credentials",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ '<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response></Response>' }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-twilio",
+      "name": "Respond to Twilio Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-new-quote",
+              "leftValue": "={{ $json.classification.intent }}",
+              "rightValue": "quote",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-is-quote",
+      "name": "IF - Is Quote Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2050, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workflow-reference",
+              "name": "targetWorkflow",
+              "value": "Coordinator Agent",
+              "type": "string"
+            },
+            {
+              "id": "input-data",
+              "name": "inputData",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-coordinator",
+      "name": "Set - Route to Coordinator",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [2250, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_task_insert"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ {\n  \"agentId\": \"7fa050a2-c4c0-4e1c-8860-2008a6f0aec2\",\n  \"insuredId\": $json.customerHistory.customer?.id || null,\n  \"subject\": \"SMS: \" + $json.classification.summary,\n  \"description\": \"SMS received from \" + $json.customerPhone + \"\\n\\nRequest: \" + $json.classification.summary + \"\\n\\nOriginal message:\\n\" + $json.messageText,\n  \"dueDate\": new Date(Date.now() + 86400000).toISOString(),\n  \"priority\": $json.classification.priority === 'urgent' ? 'High' : 'Normal',\n  \"status\": \"Not Started\"\n} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-task",
+      "name": "HTTP - Create Task for Chase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2250, 400],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Webhook - Twilio SMS": {
+      "main": [
+        [
+          {
+            "node": "Function - Extract SMS Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Extract SMS Data": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Call Message Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Call Message Classifier": {
+      "main": [
+        [
+          {
+            "node": "Execute - Load Customer History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute - Load Customer History": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Merge Data": {
+      "main": [
+        [
+          {
+            "node": "AI - Generate SMS Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate SMS Reply": {
+      "main": [
+        [
+          {
+            "node": "Function - Validate SMS Length",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Validate SMS Length": {
+      "main": [
+        [
+          {
+            "node": "Twilio - Send SMS Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twilio - Send SMS Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond to Twilio Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Twilio Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Quote Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Quote Request": {
+      "main": [
+        [
+          {
+            "node": "Set - Route to Coordinator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Create Task for Chase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Intake Channel",
+      "id": "intake-channel"
+    },
+    {
+      "name": "Foundation",
+      "id": "foundation-phase1"
+    }
+  ],
+  "meta": {
+    "instanceId": "nowcerts-insurance-automation"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}

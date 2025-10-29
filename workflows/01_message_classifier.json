@@ -1,0 +1,358 @@
+{
+  "name": "Message Classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "classify-message",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook - Receive Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "classify-message"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are an insurance request classifier. Analyze the incoming message and extract:\n\n1. **Intent** - Primary purpose of the message:\n   - new_auto_quote: Request for auto insurance quote\n   - new_home_quote: Request for homeowners insurance quote\n   - new_bundle_quote: Request for both auto and home\n   - add_driver: Adding a driver to existing policy\n   - add_vehicle: Adding a vehicle to existing policy\n   - change_address: Address change request\n   - make_payment: Payment inquiry or request\n   - claims: Filing or inquiring about a claim\n   - general_inquiry: Questions about coverage, billing, etc.\n   - cancel_policy: Request to cancel coverage\n\n2. **Priority**:\n   - urgent: Claims, payment issues, cancellation requests\n   - high: New quotes, service requests with specific deadlines\n   - normal: General inquiries, routine service requests\n   - low: Marketing inquiries, general questions\n\n3. **Extracted Data**:\n   - names: Array of full names mentioned\n   - phones: Array of phone numbers (any format)\n   - emails: Array of email addresses\n   - vins: Array of VIN numbers (if mentioned)\n   - addresses: Array of street addresses\n   - vehicles: Array of vehicle descriptions (year, make, model)\n   - dates: Any dates or deadlines mentioned\n\nReturn ONLY valid JSON with this exact structure:\n{\n  \"intent\": \"string\",\n  \"priority\": \"string\",\n  \"extractedData\": {\n    \"names\": [],\n    \"phones\": [],\n    \"emails\": [],\n    \"vins\": [],\n    \"addresses\": [],\n    \"vehicles\": [],\n    \"dates\": []\n  },\n  \"summary\": \"one-sentence summary of the request\"\n}"
+            },
+            {
+              "role": "user",
+              "message": "=Channel: {{ $json.channel }}\nFrom: {{ $json.customerEmail || $json.customerPhone }}\n\nMessage:\n{{ $json.messageText }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "ai-classifier",
+      "name": "AI - Classify Intent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response\nconst aiResponse = JSON.parse($input.first().json.response);\n\n// Function to normalize phone numbers\nfunction normalizePhone(phone) {\n  if (!phone) return null;\n  const digits = phone.replace(/\\D/g, '');\n  const cleanDigits = digits.startsWith('1') ? digits.slice(1) : digits;\n  if (cleanDigits.length !== 10) return null;\n  return `${cleanDigits.slice(0,3)}-${cleanDigits.slice(3,6)}-${cleanDigits.slice(6,10)}`;\n}\n\n// Function to validate email\nfunction validateEmail(email) {\n  if (!email) return null;\n  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n  return emailRegex.test(email) ? email.toLowerCase() : null;\n}\n\n// Normalize extracted data\nconst normalized = {\n  intent: aiResponse.intent,\n  priority: aiResponse.priority,\n  summary: aiResponse.summary,\n  customer: {\n    names: aiResponse.extractedData.names || [],\n    phones: (aiResponse.extractedData.phones || []).map(normalizePhone).filter(p => p),\n    emails: (aiResponse.extractedData.emails || []).map(validateEmail).filter(e => e),\n    primaryName: aiResponse.extractedData.names?.[0] || null,\n    primaryPhone: null,\n    primaryEmail: null\n  },\n  vehicles: aiResponse.extractedData.vehicles || [],\n  vins: aiResponse.extractedData.vins || [],\n  addresses: aiResponse.extractedData.addresses || [],\n  dates: aiResponse.extractedData.dates || [],\n  originalMessage: $input.first().json.messageText,\n  channel: $input.first().json.channel,\n  timestamp: new Date().toISOString()\n};\n\n// Set primary contact info\nif (normalized.customer.phones.length > 0) {\n  normalized.customer.primaryPhone = normalized.customer.phones[0];\n}\nif (normalized.customer.emails.length > 0) {\n  normalized.customer.primaryEmail = normalized.customer.emails[0];\n}\n\nreturn normalized;"
+      },
+      "id": "normalize-data",
+      "name": "Function - Normalize Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_insured_getList"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"filter\": \"contains(phone, '\" + $json.customer.primaryPhone + \"') or contains(cellPhone, '\" + $json.customer.primaryPhone + \"') or contains(eMail, '\" + $json.customer.primaryEmail + \"')\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "search-customer",
+      "name": "HTTP - Search Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge classified data with customer search results\nconst classified = $input.first().json;\nconst searchResults = $input.last()?.json?.result || [];\n\n// Check if customer exists\nconst existingCustomer = searchResults.length > 0 ? searchResults[0] : null;\n\nreturn {\n  ...classified,\n  existingCustomer: existingCustomer,\n  isNewCustomer: !existingCustomer,\n  customerId: existingCustomer?.id || null,\n  customerName: existingCustomer?.fullName || classified.customer.primaryName,\n  routingDecision: {\n    workflow: getTargetWorkflow(classified.intent),\n    requiresImmediate: classified.priority === 'urgent',\n    needsHumanReview: classified.priority === 'urgent' && classified.intent === 'claims'\n  }\n};\n\nfunction getTargetWorkflow(intent) {\n  const workflows = {\n    'new_auto_quote': 'coordinator_agent',\n    'new_home_quote': 'coordinator_agent',\n    'new_bundle_quote': 'coordinator_agent',\n    'add_driver': 'service_request_driver',\n    'add_vehicle': 'service_request_vehicle',\n    'change_address': 'service_request_address',\n    'make_payment': 'payment_workflow',\n    'claims': 'claims_workflow',\n    'general_inquiry': 'general_inquiry',\n    'cancel_policy': 'cancellation_workflow'\n  };\n  return workflows[intent] || 'general_inquiry';\n}"
+      },
+      "id": "merge-results",
+      "name": "Function - Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "new_auto_quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "new_quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "new_home_quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "new_quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "new_bundle_quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "new_quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "add_driver",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "add_vehicle",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "change_address",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "service_request"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "claims",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "urgent_claims"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "route-by-intent",
+      "name": "Switch - Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-classification",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Message": {
+      "main": [
+        [
+          {
+            "node": "AI - Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "Function - Normalize Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Normalize Data": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Search Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Search Customer": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Foundation",
+      "id": "foundation-phase1"
+    }
+  ],
+  "meta": {
+    "instanceId": "nowcerts-insurance-automation"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}

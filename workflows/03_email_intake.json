@@ -1,0 +1,343 @@
+{
+  "name": "Email Intake Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerOn": "messageReceived",
+        "filters": {}
+      },
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-oauth",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract email data\nconst email = $input.first().json;\n\n// Get plain text from body (prefer plain text over HTML)\nlet messageText = email.plainText || '';\n\nif (!messageText && email.textHtml) {\n  // Basic HTML to text conversion\n  messageText = email.textHtml\n    .replace(/<style[^>]*>.*?<\\/style>/gi, '')\n    .replace(/<script[^>]*>.*?<\\/script>/gi, '')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nreturn {\n  channel: 'email',\n  messageId: email.id,\n  threadId: email.threadId,\n  messageText: messageText,\n  subject: email.subject || '(No Subject)',\n  customerEmail: email.from?.email || email.from,\n  customerName: email.from?.name || null,\n  receivedDate: email.date || new Date().toISOString(),\n  hasAttachments: (email.attachments?.length || 0) > 0,\n  attachments: email.attachments || [],\n  originalEmail: email\n};"
+      },
+      "id": "extract-email-data",
+      "name": "Function - Extract Email Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"Webhook - Classify Message\"].webhookUrl }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "messageText",
+              "value": "={{ $json.messageText }}"
+            },
+            {
+              "name": "customerEmail",
+              "value": "={{ $json.customerEmail }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "call-classifier",
+      "name": "HTTP - Call Message Classifier",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ $workflow.id }}",
+        "source": "parameter",
+        "options": {}
+      },
+      "id": "load-customer-history",
+      "name": "Execute - Load Customer History",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge classification with email data\nconst email = $input.first().json;\nconst classification = $input.item(1).json;\nconst history = $input.item(2).json;\n\nreturn {\n  ...email,\n  classification: classification,\n  customerHistory: history,\n  shouldAutoReply: true,\n  replyType: getReplyType(classification.intent, classification.priority)\n};\n\nfunction getReplyType(intent, priority) {\n  if (priority === 'urgent') return 'urgent_acknowledgment';\n  if (intent.includes('quote')) return 'quote_acknowledgment';\n  if (intent.includes('service')) return 'service_acknowledgment';\n  return 'general_acknowledgment';\n}"
+      },
+      "id": "merge-data",
+      "name": "Function - Merge Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are Nathan, a friendly insurance agent writing email responses. Generate a professional but warm auto-reply email based on the customer's request.\n\nGuidelines:\n- Thank them for reaching out\n- Acknowledge their specific request\n- Set expectations for response time (24-48 hours for quotes)\n- Include your contact information\n- Keep it concise (3-4 paragraphs max)\n- Sign as Nathan from ReduceMyIns\n\nFor urgent requests (claims, cancellations): Emphasize immediate attention.\nFor quote requests: Mention that you'll prepare detailed options.\nFor service requests: Confirm you'll process their request.\n\nReturn ONLY the email body text, no subject line."
+            },
+            {
+              "role": "user",
+              "message": "=Customer: {{ $json.customerName || $json.customerEmail }}\nSubject: {{ $json.subject }}\nRequest Type: {{ $json.classification.intent }}\nPriority: {{ $json.classification.priority }}\nSummary: {{ $json.classification.summary }}\n\nOriginal Message:\n{{ $json.messageText }}\n\nCustomer History:\n- Existing Customer: {{ $json.customerHistory.summary.isExistingCustomer }}\n- Active Policies: {{ $json.customerHistory.summary.hasActivePolicies }}\n- Policy Count: {{ $json.customerHistory.history.policyCount }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "generate-reply",
+      "name": "AI - Generate Auto-Reply",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.customerEmail }}",
+        "subject": "=Re: {{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.response }}",
+        "options": {
+          "ccList": "",
+          "bccList": ""
+        }
+      },
+      "id": "send-email-reply",
+      "name": "Gmail - Send Auto-Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1450, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-oauth",
+          "name": "Gmail OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-new-quote",
+              "leftValue": "={{ $json.classification.intent }}",
+              "rightValue": "quote",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-is-quote",
+      "name": "IF - Is Quote Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1650, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workflow-reference",
+              "name": "targetWorkflow",
+              "value": "Coordinator Agent",
+              "type": "string"
+            },
+            {
+              "id": "input-data",
+              "name": "inputData",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-coordinator",
+      "name": "Set - Route to Coordinator",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1850, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_task_insert"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ {\n  \"agentId\": \"7fa050a2-c4c0-4e1c-8860-2008a6f0aec2\",\n  \"insuredId\": $json.customerHistory.customer?.id || null,\n  \"subject\": \"Email: \" + $json.classification.summary,\n  \"description\": \"Email received from \" + $json.customerEmail + \"\\n\\nRequest: \" + $json.classification.summary + \"\\n\\nOriginal message:\\n\" + $json.messageText.substring(0, 500),\n  \"dueDate\": new Date(Date.now() + 86400000).toISOString(),\n  \"priority\": $json.classification.priority === 'urgent' ? 'High' : 'Normal',\n  \"status\": \"Not Started\"\n} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-task",
+      "name": "HTTP - Create Task for Chase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1850, 400],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Function - Extract Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Extract Email Data": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Call Message Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Call Message Classifier": {
+      "main": [
+        [
+          {
+            "node": "Execute - Load Customer History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute - Load Customer History": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Merge Data": {
+      "main": [
+        [
+          {
+            "node": "AI - Generate Auto-Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Generate Auto-Reply": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send Auto-Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Send Auto-Reply": {
+      "main": [
+        [
+          {
+            "node": "IF - Is Quote Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Is Quote Request": {
+      "main": [
+        [
+          {
+            "node": "Set - Route to Coordinator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Create Task for Chase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Intake Channel",
+      "id": "intake-channel"
+    },
+    {
+      "name": "Foundation",
+      "id": "foundation-phase1"
+    }
+  ],
+  "meta": {
+    "instanceId": "nowcerts-insurance-automation"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}

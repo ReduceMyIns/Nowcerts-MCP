@@ -1,0 +1,608 @@
+{
+  "name": "Coordinator Agent (Nathan)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "When called by intake workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load the Coordinator Agent system prompt from file\nconst fs = require('fs');\nconst path = require('path');\n\n// Read the coordinator agent prompt\nconst promptPath = '/home/user/Nowcerts-MCP/prompts/N8N_COORDINATOR_AGENT.md';\nconst coordinatorPrompt = fs.readFileSync(promptPath, 'utf-8');\n\nconst input = $input.first().json;\n\nreturn {\n  systemPrompt: coordinatorPrompt,\n  customerData: input,\n  conversationHistory: [],\n  agentState: {\n    currentStep: 'initialize',\n    collectedData: {},\n    nextAction: 'greet_customer'\n  }\n};"
+      },
+      "id": "load-system-prompt",
+      "name": "Function - Load System Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "={{ $json.systemPrompt }}\n\n## Available Tools\n\nYou have access to all NowCerts MCP tools via the NowCerts MCP Server at https://mcp.srv992249.hstgr.cloud/sse\n\nYou can also route to specialized agents:\n- intake_agent: Gather and validate customer information\n- research_agent: Run external API enrichment (Fenris, NHTSA, Smarty)\n- coverage_advisor: Provide insurance recommendations\n- data_manager: Create records in NowCerts\n- followup_agent: Schedule callbacks and create tasks\n- crosssell_agent: Identify bundle opportunities\n\n## Current Customer Request\n\nChannel: {{ $json.customerData.channel }}\nIntent: {{ $json.customerData.classification.intent }}\nSummary: {{ $json.customerData.classification.summary }}\nPriority: {{ $json.customerData.classification.priority }}\n\nCustomer Info:\n- Name: {{ $json.customerData.customer.primaryName }}\n- Phone: {{ $json.customerData.customer.primaryPhone }}\n- Email: {{ $json.customerData.customer.primaryEmail }}\n- Existing Customer: {{ $json.customerData.existingCustomer ? 'Yes' : 'No' }}\n\nExtracted Data:\n{{ JSON.stringify($json.customerData.extractedData, null, 2) }}\n\nOriginal Message:\n{{ $json.customerData.originalMessage }}\n\n## Your Task\n\nOrchestrate the workflow to handle this customer request. Route to appropriate agents, gather information, provide recommendations, and complete the quote process.\n\nRemember:\n- You are Nathan, the customer-facing agent\n- Route tasks to specialized agents\n- Present results naturally to the customer\n- One question at a time\n- Be warm and professional"
+            },
+            {
+              "role": "user",
+              "message": "Please help this customer with their {{ $json.customerData.classification.intent }} request."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2000
+        }
+      },
+      "id": "coordinator-ai",
+      "name": "AI - Coordinator Agent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse coordinator agent response and determine next action\nconst response = $input.first().json.response;\nconst customerData = $input.first().json.customerData;\n\n// Extract any agent routing commands from the response\nconst routingPattern = /ROUTE\\s*→\\s*(\\w+)/gi;\nconst routes = [];\nlet match;\n\nwhile ((match = routingPattern.exec(response)) !== null) {\n  routes.push(match[1].toLowerCase());\n}\n\nreturn {\n  coordinatorResponse: response,\n  customerData: customerData,\n  nextAgents: routes,\n  requiresRouting: routes.length > 0,\n  conversationComplete: response.includes('COMPLETE') || response.includes('quote created'),\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "parse-routing",
+      "name": "Function - Parse Routing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-routing",
+              "leftValue": "={{ $json.requiresRouting }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-routing",
+      "name": "IF - Needs Agent Routing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "intake",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "intake_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "research",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "research_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "coverage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "coverage_advisor"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "data",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "data_manager"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "followup",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "followup_agent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nextAgents[0] }}",
+                    "rightValue": "crosssell",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "crosssell_agent"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "route-to-agent",
+      "name": "Switch - Route to Agent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "intake_agent",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Intake agent sub-workflow not yet implemented. Would gather and validate customer information.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "intake-placeholder",
+      "name": "Placeholder - Intake Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 100]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "research_agent",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Research agent sub-workflow not yet implemented. Would run Fenris prefill, NHTSA VIN decode, and Smarty address validation.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "research-placeholder",
+      "name": "Placeholder - Research Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "coverage_advisor",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Coverage Advisor agent sub-workflow not yet implemented. Would provide insurance recommendations.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "coverage-placeholder",
+      "name": "Placeholder - Coverage Advisor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "data_manager",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Data Manager agent sub-workflow not yet implemented. Would create quote/policy records in NowCerts.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "data-manager-placeholder",
+      "name": "Placeholder - Data Manager",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "followup_agent",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Follow-up agent sub-workflow not yet implemented. Would create tasks and schedule callbacks.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "followup-placeholder",
+      "name": "Placeholder - Follow-up Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 500]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-name",
+              "name": "agentCalled",
+              "value": "crosssell_agent",
+              "type": "string"
+            },
+            {
+              "id": "note",
+              "name": "note",
+              "value": "Cross-Sell agent sub-workflow not yet implemented. Would identify bundle opportunities.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "crosssell-placeholder",
+      "name": "Placeholder - Cross-Sell Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1450, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Return coordinator response (agent routing not yet implemented)\nconst data = $input.first().json;\n\nreturn {\n  status: 'in_progress',\n  coordinatorResponse: data.coordinatorResponse,\n  note: 'Agent sub-workflows are placeholders and need to be fully implemented in Phase 2',\n  customerData: data.customerData,\n  nextSteps: [\n    'Implement Intake Agent sub-workflow',\n    'Implement Research Agent sub-workflow',\n    'Implement Coverage Advisor sub-workflow',\n    'Implement Data Manager sub-workflow',\n    'Implement Follow-up Agent sub-workflow',\n    'Implement Cross-Sell Agent sub-workflow'\n  ]\n};"
+      },
+      "id": "return-response",
+      "name": "Function - Return Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all results\nconst items = $input.all();\n\nreturn {\n  status: 'completed',\n  coordinatorResponse: items[0]?.json?.coordinatorResponse || 'Processing complete',\n  agentResults: items.map(i => ({\n    agent: i.json.agentCalled,\n    note: i.json.note\n  })),\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "merge-results",
+      "name": "Function - Merge Agent Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 400]
+    }
+  ],
+  "connections": {
+    "When called by intake workflow": {
+      "main": [
+        [
+          {
+            "node": "Function - Load System Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Load System Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI - Coordinator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI - Coordinator Agent": {
+      "main": [
+        [
+          {
+            "node": "Function - Parse Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Parse Routing": {
+      "main": [
+        [
+          {
+            "node": "IF - Needs Agent Routing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Needs Agent Routing": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Function - Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route to Agent": {
+      "main": [
+        [
+          {
+            "node": "Placeholder - Intake Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placeholder - Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placeholder - Coverage Advisor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placeholder - Data Manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placeholder - Follow-up Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placeholder - Cross-Sell Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Intake Agent": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Coverage Advisor": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Data Manager": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Follow-up Agent": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placeholder - Cross-Sell Agent": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge Agent Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Core Agent",
+      "id": "core-agent"
+    },
+    {
+      "name": "Phase 2",
+      "id": "phase2"
+    }
+  ],
+  "meta": {
+    "instanceId": "nowcerts-insurance-automation"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}

@@ -1,0 +1,398 @@
+{
+  "name": "Customer History Loader (Sub-workflow)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "When called by another workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract customer identifier from input\nconst input = $input.first().json;\n\nreturn {\n  customerId: input.customerId || null,\n  phone: input.phone || null,\n  email: input.email || null,\n  searchMode: input.customerId ? 'by_id' : 'by_contact'\n};"
+      },
+      "id": "extract-identifier",
+      "name": "Function - Extract Identifier",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-customer-id",
+              "leftValue": "={{ $json.customerId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-has-id",
+      "name": "IF - Has Customer ID",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_insured_get"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"id\": $json.customerId } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-by-id",
+      "name": "HTTP - Get Customer by ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_insured_getList"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"filter\": \"contains(phone, '\" + $json.phone + \"') or contains(cellPhone, '\" + $json.phone + \"') or contains(eMail, '\" + $json.email + \"')\" } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "search-by-contact",
+      "name": "HTTP - Search by Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Take first result if search returned multiple\nconst items = $input.all();\nconst customer = items[0]?.json?.result?.[0] || items[0]?.json?.result || null;\n\nif (!customer) {\n  return {\n    found: false,\n    customerId: null,\n    customerData: null\n  };\n}\n\nreturn {\n  found: true,\n  customerId: customer.id,\n  customerData: customer\n};"
+      },
+      "id": "normalize-customer",
+      "name": "Function - Normalize Customer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_policy_getList"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"filter\": \"insuredId eq '\" + $json.customerId + \"'\", \"orderby\": \"effectiveDate desc\", \"top\": 10 } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-policies",
+      "name": "HTTP - Get Policies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 300],
+      "continueOnFail": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_quote_getList"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"filter\": \"insuredId eq '\" + $json.customerId + \"'\", \"orderby\": \"createdDate desc\", \"top\": 10 } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-quotes",
+      "name": "HTTP - Get Quotes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 400],
+      "continueOnFail": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://mcp.srv992249.hstgr.cloud/sse",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tool",
+              "value": "nowcerts_note_getList"
+            },
+            {
+              "name": "arguments",
+              "value": "={{ { \"filter\": \"insuredId eq '\" + $json.customerId + \"'\", \"orderby\": \"createdDate desc\", \"top\": 20 } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-notes",
+      "name": "HTTP - Get Notes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 500],
+      "continueOnFail": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all customer data\nconst items = $input.all();\n\nconst customerData = items.find(i => i.json.customerData)?.json || {};\nconst policies = items.find(i => i.json.result && Array.isArray(i.json.result) && i.json.result[0]?.effectiveDate)?.json?.result || [];\nconst quotes = items.find(i => i.json.result && Array.isArray(i.json.result) && i.json.result[0]?.quoteNumber)?.json?.result || [];\nconst notes = items.find(i => i.json.result && Array.isArray(i.json.result) && i.json.result[0]?.noteText)?.json?.result || [];\n\nreturn {\n  customer: customerData.customerData || null,\n  history: {\n    policies: policies,\n    policyCount: policies.length,\n    activePolicies: policies.filter(p => p.status === 'Active').length,\n    quotes: quotes,\n    quoteCount: quotes.length,\n    recentNotes: notes.slice(0, 10),\n    noteCount: notes.length\n  },\n  summary: {\n    isExistingCustomer: !!customerData.customerData,\n    hasActivePolicies: policies.filter(p => p.status === 'Active').length > 0,\n    lastQuoteDate: quotes[0]?.createdDate || null,\n    lastPolicyDate: policies[0]?.effectiveDate || null,\n    customerSince: policies[policies.length - 1]?.effectiveDate || quotes[quotes.length - 1]?.createdDate || null\n  }\n};"
+      },
+      "id": "merge-history",
+      "name": "Function - Merge History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "When called by another workflow": {
+      "main": [
+        [
+          {
+            "node": "Function - Extract Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Extract Identifier": {
+      "main": [
+        [
+          {
+            "node": "IF - Has Customer ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Has Customer ID": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Customer by ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Search by Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Customer by ID": {
+      "main": [
+        [
+          {
+            "node": "Function - Normalize Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Search by Contact": {
+      "main": [
+        [
+          {
+            "node": "Function - Normalize Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function - Normalize Customer": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Policies",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Get Quotes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Get Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Policies": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Quotes": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Notes": {
+      "main": [
+        [
+          {
+            "node": "Function - Merge History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Sub-workflow",
+      "id": "sub-workflow"
+    },
+    {
+      "name": "Foundation",
+      "id": "foundation-phase1"
+    }
+  ],
+  "meta": {
+    "instanceId": "nowcerts-insurance-automation"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}
