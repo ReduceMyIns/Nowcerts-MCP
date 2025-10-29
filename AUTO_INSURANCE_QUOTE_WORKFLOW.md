@@ -1010,15 +1010,13 @@ Let me know which ones you'd like to include."
 
 ---
 
-### Step 6.5: Add Lienholders/Additional Interests
+### Step 6.5: Document Lienholders/Additional Interests
 
 **For EACH financed/leased vehicle from Phase 3.6f**:
 
-**MCP Tool**: `nowcerts_policy_insertAdditionalInsured`
+**Important**: Lienholder addition via MCP is not yet implemented. Document this information in notes for manual addition in NowCerts UI after the policy is bound.
 
-**Important**: This tool requires a PolicyDatabaseId, so this step happens AFTER a policy is created, not during quoting. However, you should **note the lienholder information** during the quote phase to add later.
-
-**Lienholder Information to Collect Now**:
+**Lienholder Information to Collect and Document**:
 ```json
 {
   "lienholderName": "from Phase 3.6f or web search",
@@ -1031,7 +1029,11 @@ Let me know which ones you'd like to include."
 }
 ```
 
-**Note**: Store this for later when the policy is bound. You'll need to use `nowcerts_policy_insertAdditionalInsured` after the policy is created.
+**Add to notes using `nowcerts_note_insert`**:
+Create a note with clear formatting like:
+"LIENHOLDER INFO FOR MANUAL ADDITION: [Vehicle Year/Make/Model] - Lienholder: [Name], Address: [Full Address], Loan #: [Number]"
+
+**Note**: This information must be added manually in NowCerts UI after the policy is bound.
 
 ---
 
@@ -1176,9 +1178,8 @@ Is there anything else you'd like to add or any questions right now?"
 6. **`nowcerts_driver_insert`** - Add each driver (repeat for all)
 7. **`nowcerts_vehicle_insert`** - Add each vehicle (repeat for all)
 8. **`nowcerts_property_insert`** - Add property information
-9. **`nowcerts_note_insert`** - Add tracking notes
+9. **`nowcerts_note_insert`** - Add tracking notes (including lienholder info for manual addition)
 10. **`nowcerts_task_insert`** - Create quoting and callback tasks
-11. **`nowcerts_policy_insertAdditionalInsured`** - Add lienholders (AFTER policy is bound)
 
 ---
 

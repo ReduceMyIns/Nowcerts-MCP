@@ -610,7 +610,7 @@ Parameters:
 
 **For financed/leased vehicles from Phase 3.10d**:
 
-**Save for later** (add after policy is bound using `nowcerts_policy_insertAdditionalInsured`):
+**Document in notes** (for manual addition to policy after binding):
 ```json
 {
   "lienholderName": "{from Phase 3.10d or web search}",
@@ -623,7 +623,10 @@ Parameters:
 }
 ```
 
-**Important**: Lienholders are added AFTER policy is bound (not during quoting)
+Add this information to NowCerts notes using `nowcerts_note_insert` with a clear note like:
+"LIENHOLDER INFO FOR MANUAL ADDITION: [Vehicle Year/Make/Model] - Lienholder: [Name], Address: [Full Address], Loan #: [Number]"
+
+**Important**: Lienholder addition via MCP is not yet implemented - must be added manually in NowCerts UI after policy is bound
 
 #### 24. Add Property Information (if applicable)
 ```
