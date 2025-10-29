@@ -337,12 +337,11 @@ Validate and standardize US addresses. **Requires SMARTY_AUTH_ID and SMARTY_AUTH
 - ZIP+4 code lookup
 - Address standardization
 
-#### NHTSA Vehicle Data (3 tools)
+#### NHTSA Vehicle Data (2 tools)
 Query NHTSA database for vehicle specifications and recalls. **No credentials required** (public API).
 
 - `nhtsa_decodeVin` - Decode VIN to get vehicle specifications
-- `nhtsa_getRecallsByVin` - Get safety recalls for specific VIN
-- `nhtsa_getRecallsByMake` - Get recalls by make, model, and year
+- `nhtsa_checkRecalls` - Get safety recalls for specific VIN
 
 **Features**:
 - Complete vehicle specifications from VIN

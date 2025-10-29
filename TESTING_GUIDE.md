@@ -413,23 +413,24 @@ See [WORKFLOW_GUIDE.md](./WORKFLOW_GUIDE.md) for the complete categorized list o
 
 ### 4. NHTSA Vehicle Recalls
 
-**Tool:** `nhtsa_getRecallsByVin` or `nhtsa_getRecallsByMake`
+**Tool:** `nhtsa_checkRecalls`
 
 **Requirements:** None (public API)
 
-**Test by VIN:**
+**Test with VIN (required):**
 ```javascript
 {
   "vin": "1HGBH41JXMN109186"
 }
 ```
 
-**Test by Make/Model/Year:**
+**Test with VIN and optional parameters for improved search:**
 ```javascript
 {
+  "vin": "1HGBH41JXMN109186",
   "make": "Honda",
   "model": "Accord",
-  "year": "1991"
+  "modelYear": 1991
 }
 ```
 
