@@ -914,6 +914,8 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         note: {
           type: "object",
           description: "Note data",
+          properties: {},
+          additionalProperties: true,
         },
       },
       required: ["note"],
@@ -940,6 +942,8 @@ Available fields: databaseId (primary key), claimNumber, status, street, city, s
         tag: {
           type: "object",
           description: "Tag data",
+          properties: {},
+          additionalProperties: true,
         },
       },
       required: ["tag"],
@@ -1090,6 +1094,8 @@ ID FIELD NAMING:
         driver: {
           type: "object",
           description: "Driver data including policyDatabaseId (required)",
+          properties: {},
+          additionalProperties: true,
         },
       },
       required: ["driver"],
@@ -1159,6 +1165,8 @@ ID FIELD NAMING:
         vehicle: {
           type: "object",
           description: "Vehicle data including policyDatabaseId (required)",
+          properties: {},
+          additionalProperties: true,
         },
       },
       required: ["vehicle"],
