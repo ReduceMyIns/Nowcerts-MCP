@@ -35,7 +35,39 @@ const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.MCP_API_KEY;
 const REQUIRE_AUTH = !!API_KEY;
 
-app.use(cors());
+// ============================================================================
+// CORS Configuration for Browser Clients
+// ============================================================================
+// Enhanced CORS for MCP SuperAssistant and other browser-based MCP clients
+
+const corsOptions = {
+  origin: '*', // Allow all origins (can be restricted to specific domains)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Cache-Control',
+    'X-MCP-Session-Id'
+  ],
+  exposedHeaders: [
+    'Content-Type',
+    'Cache-Control',
+    'X-MCP-Session-Id'
+  ],
+  credentials: true,
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
+// Handle OPTIONS preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 
 // ============================================================================
@@ -81,6 +113,11 @@ app.get('/sse', authMiddleware, (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
+
+  // Additional CORS headers for browser clients (belt and suspenders)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Cache-Control');
 
   console.log(`[SSE:${clientId}] Client connected`);
 
