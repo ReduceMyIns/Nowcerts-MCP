@@ -1,0 +1,15 @@
+{
+  "name": "reducemyinsurance-net-server",
+  "version": "1.0.0",
+  "description": "Backend for ReduceMyInsurance.Net",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
